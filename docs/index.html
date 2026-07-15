@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="DiMaS: Distribution Matching for Steering Vision-Language-Action Models — training-free activation steering for VLA robot policies via Optimal Transport.">
+  <meta name="keywords" content="DiMaS, VLA, Vision-Language-Action, steering, Optimal Transport, robotics, SmolVLA, LIBERO">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DiMaS: Distribution Matching for Steering Vision-Language-Action Models</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/favicon.svg">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/index.js"></script>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <!-- TODO: point this at the public repo once it has its final name/URL -->
+      <a class="navbar-item" href="#">
+      <span class="icon">
+          <i class="fab fa-github"></i>
+      </span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">DiMaS: Distribution Matching for Steering
+            Vision-Language-Action Models</h1>
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><a href="https://pegah-kh.github.io/" target="_blank" rel="noopener noreferrer">Pegah Khayatan</a><sup>&#9733;,1</sup>,</span>
+            <span class="author-block"><a href="https://www.linkedin.com/in/sara-meziane/" target="_blank" rel="noopener noreferrer">Sara Meziane</a><sup>&#9733;,1</sup>,</span>
+            <span class="author-block"><a href="https://jayneelparekh.github.io/" target="_blank" rel="noopener noreferrer">Jayneel Parekh</a><sup>&#9733;,1</sup>,</span>
+            <span class="author-block"><a href="https://cord.isir.upmc.fr/" target="_blank" rel="noopener noreferrer">Matthieu Cord</a><sup>1,2</sup></span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>ISIR, Sorbonne Université, Paris, France</span>
+            <span class="author-block"><sup>2</sup>Valeo.ai, Paris, France</span>
+          </div>
+
+          <div class="is-size-6 publication-authors">
+            <span class="author-block"><sup>&#9733;</sup>Equal contribution</span>
+          </div>
+
+          <div class="is-size-6 publication-authors">
+            <span class="author-block">&#123;pegah.khayatan, sara.meziane, jayneel.parekh&#125;@sorbonne-universite.fr</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- TODO: replace with the real arXiv/PDF link once available -->
+              <span class="link-block">
+                <a href="#"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>arXiv </span>
+                </a>
+              </span>
+              <!-- TODO: replace with the public GitHub repo URL -->
+              <span class="link-block">
+                <a href="#"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: fine-grained behavioral control, the ability to govern how a robot performs a task by intervening on its internal representations. Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in VLAs. We propose DiMaS, a Distribution Matching Steering strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <h2 class="title is-3 has-text-centered">Method overview</h2>
+      <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline">
+      <h2 class="subtitle has-text-centered">
+        <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
+      </h2>
+
+      <div class="content has-text-justified method-description">
+        <p>
+          We first extract representations from a chosen layer of the flow-matching action expert,
+          across a number of tasks and episodes. We then learn a classifier that separates two
+          user-defined behavior classes (e.g. high vs. low speed), and use a distribution matching
+          algorithm to learn a correspondence between the two representation distributions.
+        </p>
+        <p>
+          At inference time, we check whether the current representation already lies in the desired
+          distribution. If not, we transport it using the map learned offline. Rather than applying
+          the full transport, we interpolate between the original layer output and the transported
+          representation, giving smooth, controllable steering strength.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Key conclusions</h2>
+        <div class="content has-text-justified">
+          <ul>
+            <li>Hidden representations in the action expert layers are linearly separable but not linearly steerable.</li>
+            <li>DiMaS substantially outperforms linear and prompt-based baselines on the speed and height control trade-offs.</li>
+            <li>Steering quality depends on the diversity of actions seen during training, which is why we define four different steering setups.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Steering Demonstrations</h2>
+    <p class="has-text-centered subtitle is-6">Baseline vs. DiMaS-steered rollouts on the same task and seed.</p>
+
+    <!-- Each demonstration is a self-contained .sample-card; duplicate this block to add more samples. -->
+    <div class="samples-grid">
+
+      <div class="sample-card">
+        <h3 class="title is-4 has-text-centered">Speed steering, high &rarr; low</h3>
+        <div class="sample-pair">
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong>Baseline (unsteered)</strong></p>
+            <img src="./static/demos/speed_h2l_baseline.gif" alt="Speed baseline rollout">
+          </div>
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong>Steered (high &rarr; low)</strong></p>
+            <img src="./static/demos/speed_h2l_steered.gif" alt="Speed steered rollout">
+          </div>
+        </div>
+        <p class="sample-caption has-text-centered">The end-effector moves noticeably slower after steering.</p>
+      </div>
+
+      <div class="sample-card">
+        <h3 class="title is-4 has-text-centered">Height steering, low &rarr; high</h3>
+        <div class="sample-pair">
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong>Baseline (unsteered)</strong></p>
+            <img src="./static/demos/height_l2h_baseline.gif" alt="Height baseline rollout">
+          </div>
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong>Steered (low &rarr; high)</strong></p>
+            <img src="./static/demos/height_l2h_steered.gif" alt="Height steered rollout">
+          </div>
+        </div>
+        <p class="sample-caption has-text-centered">The end-effector moves higher (larger |&Delta;z| per step) after steering.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    <!-- TODO: keep in sync with the citation in the main repo README -->
+    <pre><code>@misc{dimas2026,
+  title  = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
+  author = {Khayatan, Pegah and Meziane, Sara and Parekh, Jayneel and Cord, Matthieu},
+  year   = {2026},
+  note   = {TODO: venue / arXiv id once available},
+}</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <!-- TODO: point this at the public repo once it has its final name/URL -->
+      <a class="icon-link" href="#" class="external-link">
+        <i class="fab fa-github"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website's source is adapted from the
+            <a href="https://github.com/nerfies/nerfies.github.io">Nerfies project page</a>,
+            licensed under a <a rel="license"
+                                 href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
