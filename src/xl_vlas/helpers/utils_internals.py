@@ -28,8 +28,7 @@ HIDDEN_STATES = {}
 # Flow matching step
 FLOW_MATCHING_STATE = {'STEP': 0}
 
-# Grasping flag and intervention log
-ROBOT_IS_GRASPING = False
+# Intervention log
 INTERVENTION_LOG = []
 
 
@@ -263,6 +262,21 @@ def apply_steering_regression_flow_matching_with_classifier(
 
 
 
+def _get_ot_tensors_cached(vector: dict, step: int, device: torch.device, dtype: torch.dtype):
+    """Return (coupling, Xs, Xt) for `step` on (device, dtype), converting once per vector/device/dtype
+    and caching on `vector` itself so repeated hook calls (every fm step, every env step) reuse them."""
+    cache = vector.setdefault("_ot_gpu_cache", {})
+    key = (device, dtype)
+    if key not in cache:
+        cache[key] = {
+            "ot_couplings": [c.detach().clone().float().to(device).to(dtype) for c in vector["ot_couplings"]],
+            "ot_Xs":        [t.detach().clone().float().to(device).to(dtype) for t in vector["ot_Xs"]],
+            "ot_Xt":        [t.detach().clone().float().to(device).to(dtype) for t in vector["ot_Xt"]],
+        }
+    cached = cache[key]
+    return cached["ot_couplings"][step], cached["ot_Xs"][step], cached["ot_Xt"][step]
+
+
 def apply_steering_ot_flow_matching_with_classifier_high_to_low(
     x: torch.Tensor,
     vector: dict,
@@ -285,9 +299,7 @@ def apply_steering_ot_flow_matching_with_classifier_high_to_low(
         INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_high": float(prob_fast), "reason": "classifier_skip"})
     else:
         # High → steer toward low using coupling Xs→Xt
-        coupling = vector['ot_couplings'][step].detach().clone().float().to(x.device).to(x.dtype)
-        Xs       = vector['ot_Xs'][step].detach().clone().float().to(x.device).to(x.dtype)  # high states
-        Xt       = vector['ot_Xt'][step].detach().clone().float().to(x.device).to(x.dtype)  # low states
+        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=high states, Xt=low states
 
         x_h           = x[:, 0].to(Xs.dtype)
         dist          = ((Xs - x_h) ** 2).sum(dim=1)
@@ -329,9 +341,7 @@ def apply_steering_ot_flow_matching_with_classifier_high_to_low_pi05(
         INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_high": float(prob_fast), "reason": "classifier_skip"})
     else:
         # High → steer toward low using coupling Xs→Xt
-        coupling = vector['ot_couplings'][step].detach().clone().float().to(x.device).to(x.dtype)
-        Xs       = vector['ot_Xs'][step].detach().clone().float().to(x.device).to(x.dtype)  # high states
-        Xt       = vector['ot_Xt'][step].detach().clone().float().to(x.device).to(x.dtype)  # low states
+        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=high states, Xt=low states
         for j in range(10):
             x_h = x[:, j].to(Xs.dtype)
             dist          = ((Xs - x_h) ** 2).sum(dim=1)
@@ -379,9 +389,7 @@ def apply_steering_ot_flow_matching_with_classifier_low_to_high(
             torch.cuda.synchronize()
         _load_t0 = time.time()
 
-        coupling = vector['ot_couplings'][step].detach().clone().float().to(x.device).to(x.dtype)
-        Xs       = vector['ot_Xs'][step].detach().clone().float().to(x.device).to(x.dtype)  # fast states
-        Xt       = vector['ot_Xt'][step].detach().clone().float().to(x.device).to(x.dtype)  # slow states
+        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=fast states, Xt=slow states
 
         if x.is_cuda:
             torch.cuda.synchronize()
@@ -446,9 +454,7 @@ def apply_steering_ot_flow_matching_with_classifier_low_to_high_pi05(
     else:
         # Slow -> steer to fast using transposed coupling
 
-        coupling = vector['ot_couplings'][step].detach().clone().float().to(x.device).to(x.dtype)
-        Xs       = vector['ot_Xs'][step].detach().clone().float().to(x.device).to(x.dtype)  # fast states
-        Xt       = vector['ot_Xt'][step].detach().clone().float().to(x.device).to(x.dtype)  # slow states
+        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=fast states, Xt=slow states
 
         for j in range(10):
             x_h = x[:, j].to(Xt.dtype)
@@ -492,18 +498,12 @@ def shift_hidden_states(
                 output_ = apply_steering_regression_vlm_with_classifier(
                     output[0],
                     vector,
-                    only_generated_tokens=only_generated_tokens,
-                    include_last_prompt_token=include_last_prompt_token,
-                    start_prompt_token_idx=start_prompt_token_idx,
                 )
                 return (output_,) + output[1:]
             else:
                 return apply_steering_regression_vlm_with_classifier(
                     output,
                     vector,
-                    only_generated_tokens=only_generated_tokens,
-                    include_last_prompt_token=include_last_prompt_token,
-                    start_prompt_token_idx=start_prompt_token_idx,
                 )
 
     elif operation == "mean_vlm_clf":
@@ -513,9 +513,6 @@ def shift_hidden_states(
                     output[0],
                     vector,
                     alpha=alpha,
-                    only_generated_tokens=only_generated_tokens,
-                    include_last_prompt_token=include_last_prompt_token,
-                    start_prompt_token_idx=start_prompt_token_idx,
                 )
                 return (output_,) + output[1:]
             else:
@@ -523,9 +520,6 @@ def shift_hidden_states(
                     output,
                     vector,
                     alpha=alpha,
-                    only_generated_tokens=only_generated_tokens,
-                    include_last_prompt_token=include_last_prompt_token,
-                    start_prompt_token_idx=start_prompt_token_idx,
                 )
 
     elif operation == "regressor_fm_clf":
@@ -534,9 +528,6 @@ def shift_hidden_states(
                 output_ = apply_steering_regression_flow_matching_with_classifier(
                     output[0],
                     vector,
-                    only_generated_tokens=only_generated_tokens,
-                    include_last_prompt_token=include_last_prompt_token,
-                    start_prompt_token_idx=start_prompt_token_idx,
                     update_fm_step=update_fm_step,
                 )
                 return (output_,) + output[1:]
@@ -544,9 +535,6 @@ def shift_hidden_states(
                 return apply_steering_regression_flow_matching_with_classifier(
                     output,
                     vector,
-                    only_generated_tokens=only_generated_tokens,
-                    include_last_prompt_token=include_last_prompt_token,
-                    start_prompt_token_idx=start_prompt_token_idx,
                     update_fm_step=update_fm_step,
                 )
 
@@ -558,9 +546,6 @@ def shift_hidden_states(
                         output[0],
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
                     return (output_,) + output[1:]
@@ -569,9 +554,6 @@ def shift_hidden_states(
                         output,
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
         else:
@@ -581,9 +563,6 @@ def shift_hidden_states(
                         output[0],
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
                     return (output_,) + output[1:]
@@ -592,9 +571,6 @@ def shift_hidden_states(
                         output,
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
 
@@ -606,9 +582,6 @@ def shift_hidden_states(
                         output[0],
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
                     return (output_,) + output[1:]
@@ -617,9 +590,6 @@ def shift_hidden_states(
                         output,
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
         else:
@@ -629,9 +599,6 @@ def shift_hidden_states(
                         output[0],
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
                     return (output_,) + output[1:]
@@ -640,9 +607,6 @@ def shift_hidden_states(
                         output,
                         vector,
                         alpha=alpha,
-                        only_generated_tokens=only_generated_tokens,
-                        include_last_prompt_token=include_last_prompt_token,
-                        start_prompt_token_idx=start_prompt_token_idx,
                         update_fm_step=update_fm_step,
                     )
 

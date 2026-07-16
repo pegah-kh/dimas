@@ -31,12 +31,12 @@ FEATURE_TAG = None
 
 
 def set_feature_func_speed():
-    global GET_FEATURE_FUNC
+    global GET_FEATURE_FUNC, FEATURE_TAG
     GET_FEATURE_FUNC = get_speed
     FEATURE_TAG = "speed"
 
 def set_feature_func_eef_height_displacement():
-    global GET_FEATURE_FUNC
+    global GET_FEATURE_FUNC, FEATURE_TAG
     GET_FEATURE_FUNC = get_eef_height_displacement
     FEATURE_TAG = "eef_height_displacement"
 
@@ -150,10 +150,13 @@ def get_hidden_repr(episode_data, layer_key=None, fm_time_step=None, max_ep_per_
     return torch.cat(all_repr, dim=0)
 
 
-def load_episode_data(extraction_dir, episode_list, suffix_episode=""):
+def load_episode_data(extraction_dir, episode_list, suffix_episode="", flat=False):
     all_data = {}
     for episode in episode_list:
-        path = os.path.join(extraction_dir, episode+suffix_episode, 'videos', episode[5:], 'episode_output_data.pt')
+        if flat:
+            path = os.path.join(extraction_dir, 'videos', episode, 'episode_output_data.pt')
+        else:
+            path = os.path.join(extraction_dir, episode + suffix_episode, 'videos', episode, 'episode_output_data.pt')
         all_data[episode] = torch.load(path)
     return all_data
 
@@ -165,8 +168,8 @@ def vlm_steering_generate_regression_with_classifier(layer_num, extraction_dir, 
     layer = f'model.paligemma_with_expert.paligemma.model.language_model.layers.{layer_num}.mlp_gated_residual'
     
     all_repr = []
-    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_vlm")
-    
+    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_mean_vlm")
+
     for episode in episode_list:
         all_repr.append(get_hidden_repr(all_data[episode], layer_key=layer))
 
@@ -233,7 +236,7 @@ def vlm_steering_generate_diff_means_with_classifier(layer_num, extraction_dir, 
     layer = f'model.paligemma_with_expert.paligemma.model.language_model.layers.{layer_num}.mlp_gated_residual'
 
     all_repr = []
-    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_vlm")  # Load all data once
+    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_mean_vlm")  # Load all data once
     for episode in episode_list:
         all_repr.append(get_hidden_repr(all_data[episode], layer_key=layer))
 
@@ -311,7 +314,7 @@ def fm_steering_generate_regression_with_classifier(layer_num, extraction_dir, e
     classifiers_low  = [None] * num_steps
     classifiers_high = [None] * num_steps
     train_episodes = episode_list[:n_train_tasks] if n_train_tasks else episode_list
-    all_data = load_episode_data(extraction_dir, train_episodes, suffix_episode="_fm")
+    all_data = load_episode_data(extraction_dir, train_episodes, flat=True)
 
     feature, _ = get_feature_distribution(all_data, train_episodes, success_only=True)
     q_low_val  = float(np.quantile(feature, low_q))
@@ -441,7 +444,7 @@ def fm_steering_generate_OT(layer_num, extraction_dir, episode_list,
     if max_ep_per_task is not None:
         print(f"Using first {max_ep_per_task} rollouts per task")
 
-    all_data = load_episode_data(extraction_dir, train_episodes, suffix_episode="_fm")
+    all_data = load_episode_data(extraction_dir, episode_list, flat=True)
 
     # ── Speed distribution ────────────────────────────────────────────────
     feature_train, _ = get_feature_distribution(all_data, train_episodes, success_only=True, max_ep_per_task=max_ep_per_task)

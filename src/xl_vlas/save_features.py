@@ -71,7 +71,6 @@ from xl_vlas.helpers.utils_internals import (
     clear_hooks_variables,
     setup_hooks,
     update_dict_of_list,
-    set_robot_grasping_state,
 )
 from xl_vlas.helpers import utils_internals as _utils_internals
 
@@ -104,7 +103,6 @@ def rollout(
     render_callback: Callable[[gym.vector.VectorEnv], None] | None = None,
     hook_return_functions: Callable = None,
     action_hook: Callable[[np.ndarray], np.ndarray] | None = None,
-    pickup_filter: bool = False,
     task_suffix: str | None = None,
 ) -> dict:
     """Run a batched policy rollout once through a batch of environments.
@@ -156,27 +154,7 @@ def rollout(
     all_rewards = []
     all_successes = []
     all_dones = []
-    infer_step_times = []
     step_intervention_logs = []  # per env-step: list of INTERVENTION_LOG entries appended during that step's select_action()
-
-    # --- Pickup filter: gripper state tracking ---
-    if pickup_filter:
-        WINDOW_SIZE = 3
-        REF_STEPS = 30
-        K = 2.0
-        UNSTABLE_PATIENCE = 3
-        STABLE_PATIENCE = 6
-        EPSILON = 1e-4
-        has_grasped = False
-        gripper_sliding_window = []
-        gripper_differences = []
-        gripper_state = True
-        unstable_count = 0
-        stable_count = 0
-        threshold = None
-        set_robot_grasping_state(True)   # block steering until object is held
-    else:
-        set_robot_grasping_state(False)  # never block steering (default behavior)
 
     step = 0
     # Keep track of which environments are done.
@@ -203,13 +181,9 @@ def rollout(
         # Apply environment-specific preprocessing (e.g., LiberoProcessorStep for LIBERO)
         observation = env_preprocessor(observation)
         observation = preprocessor(observation)
-        torch.cuda.synchronize()
-        infer_t0 = time.time()
         n_intervention_entries_before = len(_utils_internals.INTERVENTION_LOG)
         with torch.inference_mode():
             action = policy.select_action(observation)
-        torch.cuda.synchronize()
-        infer_step_times.append(time.time() - infer_t0)
         step_intervention_logs.append(list(_utils_internals.INTERVENTION_LOG[n_intervention_entries_before:]))
         action = postprocessor(action)
 
@@ -234,51 +208,6 @@ def rollout(
 
         # Apply the next action.
         observation, reward, terminated, truncated, info = env.step(action_numpy)
-
-        # --- Pickup filter: update gripper state after each env step ---
-        if pickup_filter:
-            gripper_qpos = observation["robot_state"]["gripper"]["qpos"][0]
-            gripper_opening = float(gripper_qpos[0] - gripper_qpos[1])
-
-            if len(gripper_sliding_window) < WINDOW_SIZE:
-                diff = 0.0
-            else:
-                diff = abs(gripper_opening - np.mean(gripper_sliding_window))
-
-            gripper_differences.append(diff)
-            gripper_sliding_window.append(gripper_opening)
-            gripper_sliding_window = gripper_sliding_window[-WINDOW_SIZE:]
-
-            if threshold is None and len(gripper_differences) >= REF_STEPS:
-                threshold = K * np.max(gripper_differences[:REF_STEPS])
-
-            prev_gripper_state = gripper_state
-            if threshold is None:
-                can_intervene = False
-            elif diff < EPSILON:
-                gripper_state = True
-                unstable_count = 0
-                stable_count = 0
-                can_intervene = has_grasped
-            else:
-                is_stable = diff <= threshold
-                if is_stable:
-                    stable_count += 1
-                    unstable_count = 0
-                else:
-                    unstable_count += 1
-                    stable_count = 0
-                if gripper_state and unstable_count >= UNSTABLE_PATIENCE:
-                    gripper_state = False
-                if not gripper_state and stable_count >= STABLE_PATIENCE:
-                    gripper_state = True
-                can_intervene = gripper_state and has_grasped
-
-            if gripper_state != prev_gripper_state and not prev_gripper_state and gripper_state:
-                has_grasped = True
-
-            set_robot_grasping_state(not can_intervene)
-        # ─────────────────────────────────────────────────────
 
         if render_callback is not None:
             render_callback(env)
@@ -337,7 +266,6 @@ def rollout(
         "success": torch.stack(all_successes, dim=1),
         "done": torch.stack(all_dones, dim=1),
         "hook_data": hook_data,
-        "infer_step_times": infer_step_times,
         "step_intervention_logs": step_intervention_logs,
     }
 
@@ -382,7 +310,6 @@ def eval_policy(
     start_seed: int | None = None,
     hook_return_functions: Callable = None,
     action_hook: Callable[[np.ndarray], np.ndarray] | None = None,
-    pickup_filter: bool = False,
     task_suffix: str | None = None,
 ) -> dict:
     """
@@ -426,7 +353,6 @@ def eval_policy(
     max_rewards = []
     all_successes = []
     all_seeds = []
-    all_infer_step_times = []  # per-episode list of per-step policy.select_action() wall-times (s)
     all_step_intervention_logs = []  # per-episode list of per-step INTERVENTION_LOG entries
     threads = []  # for video saving threads
     n_episodes_rendered = 0  # for saving the correct number of videos
@@ -475,11 +401,9 @@ def eval_policy(
             render_callback=render_frame if max_episodes_rendered > 0 else None,
             hook_return_functions=hook_return_functions,
             action_hook=action_hook,
-            pickup_filter=pickup_filter,
             task_suffix=task_suffix,
         )
 
-        all_infer_step_times.append(rollout_data["infer_step_times"])
         all_step_intervention_logs.append(rollout_data["step_intervention_logs"])
 
         # Figure out where in each rollout sequence the first done condition was encountered (results after
@@ -604,9 +528,8 @@ def eval_policy(
 
     if videos_dir is not None:
         videos_dir.mkdir(parents=True, exist_ok=True)
-        with open(videos_dir / "step_infer_times.json", "w") as f:
+        with open(videos_dir / "step_intervention_logs.json", "w") as f:
             json.dump({
-                "per_episode_infer_step_times_s": all_infer_step_times[:n_episodes],
                 "per_episode_step_intervention_logs": all_step_intervention_logs[:n_episodes],
             }, f)
 
@@ -768,7 +691,6 @@ def eval_main(cfg: FeatureExtractionPipelineConfig):
             return_episode_data=True,
             hook_return_functions=hook_return_functions,
             action_hook=action_hook,
-            pickup_filter=cfg.pickup_filter,
             task_suffix=cfg.replaced_instruction,
         )
         print("Overall Aggregated Metrics:")
@@ -814,7 +736,6 @@ def eval_one(
     start_seed: int | None,
     hook_return_functions: Callable = None,
     action_hook: Callable[[np.ndarray], np.ndarray] | None = None,
-    pickup_filter: bool = False,
     task_suffix: str | None = None,
 ) -> TaskMetrics:
     """Evaluates one task_id of one suite using the provided vec env."""
@@ -835,7 +756,6 @@ def eval_one(
         start_seed=start_seed,
         hook_return_functions=hook_return_functions,
         action_hook=action_hook,
-        pickup_filter=pickup_filter,
         task_suffix=task_suffix,
     )
 
@@ -865,7 +785,6 @@ def run_one(
     start_seed: int | None,
     hook_return_functions: Callable = None,
     action_hook: Callable[[np.ndarray], np.ndarray] | None = None,
-    pickup_filter: bool = False,
     task_suffix: str | None = None,
 ):
     """
@@ -911,7 +830,6 @@ def run_one(
         start_seed=start_seed,
         hook_return_functions=hook_return_functions,
         action_hook=action_hook,
-        pickup_filter=pickup_filter,
         task_suffix=task_suffix,
     )
     # ensure we always provide video_paths key to simplify accumulation
@@ -936,7 +854,6 @@ def eval_policy_all(
     max_parallel_tasks: int = 1,
     hook_return_functions: Callable = None,
     action_hook: Callable[[np.ndarray], np.ndarray] | None = None,
-    pickup_filter: bool = False,
     task_suffix: str | None = None,
 ) -> dict:
     """
@@ -995,7 +912,6 @@ def eval_policy_all(
         start_seed=start_seed,
         hook_return_functions=hook_return_functions,
         action_hook=action_hook,
-        pickup_filter=pickup_filter,
         task_suffix=task_suffix,
     )
 

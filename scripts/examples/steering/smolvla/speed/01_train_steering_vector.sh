@@ -51,4 +51,4 @@ python "$SPEED_SCRIPT" \
     --n-episodes-per-task "$N_EPISODES" \
     --n-train-tasks 4
 
-echo "=== Done: vector saved under ${VECS_DIR}/FM_steering_vecs_OT_${SUFFIX}.pt ==="
+echo "=== Done: vector saved under ${VECS_DIR}/FM_steering_vecs_OT_speed${SUFFIX}.pt ==="

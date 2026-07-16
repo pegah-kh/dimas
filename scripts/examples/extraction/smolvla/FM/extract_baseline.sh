@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Extract per-denoising-step hidden states from the flow-matching / action-
 # expert layers ("layer group 1") of a few un-steered SmolVLA rollouts.
-# This is the data consumed by steering/speed/SmolVLA/01_train_steering_vector.sh
-# and steering/z-displacement/SmolVLA/01_train_steering_vector.sh.
+# This is the data consumed by steering/smolvla/speed/01_train_steering_vector.sh
+# and steering/smolvla/z-displacement/01_train_steering_vector.sh.
 set -euo pipefail
 
 export MUJOCO_GL=egl  # headless rendering, required by LIBERO

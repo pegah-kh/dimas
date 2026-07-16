@@ -1,7 +1,7 @@
 import argparse
 
 
-from scripts.features.smolvla.utils import (vlm_steering_generate_regression_with_classifier,
+from utils import (vlm_steering_generate_regression_with_classifier,
                                             vlm_steering_generate_diff_means_with_classifier, 
                                             fm_steering_generate_regression_with_classifier, 
                                             fm_steering_generate_OT,

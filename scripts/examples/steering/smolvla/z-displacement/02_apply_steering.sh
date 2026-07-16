@@ -24,7 +24,7 @@ LAYER="${LAYER:-30}"
 ALPHA="${ALPHA:-0.5}"
 
 VECS_DIR="${VECS_DIR:-./results/examples/vectors/z-displacement/SmolVLA}"
-VECTOR="$VECS_DIR/FM_eef_height_steering_vecs_OT__${SUITE}_layer${LAYER}.pt"
+VECTOR="$VECS_DIR/FM_steering_vecs_OT_eef_height_displacement_${SUITE}_layer${LAYER}.pt"
 OUTPUT_DIR="${OUTPUT_DIR:-./results/examples/steered/z-displacement/SmolVLA}"
 
 if [[ ! -f "$VECTOR" ]]; then

@@ -25,7 +25,7 @@ LAYER="${LAYER:-30}"
 ALPHA="${ALPHA:-0.5}"
 
 VECS_DIR="${VECS_DIR:-./results/examples/vectors/speed/SmolVLA}"
-VECTOR="$VECS_DIR/FM_steering_vecs_OT__${SUITE}_layer${LAYER}.pt"
+VECTOR="$VECS_DIR/FM_steering_vecs_OT_speed_${SUITE}_layer${LAYER}.pt"
 OUTPUT_DIR="${OUTPUT_DIR:-./results/examples/steered/speed/SmolVLA}"
 
 if [[ ! -f "$VECTOR" ]]; then

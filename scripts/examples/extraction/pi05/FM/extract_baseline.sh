@@ -17,11 +17,11 @@ N_EPISODES="${N_EPISODES:-10}"
 TASK_IDS="${TASK_IDS:-[0,1,2,3,4,5,6,7,8,9]}"  # all 10 tasks: 0-4 used to train
                                                 # the steering vector, 5-9 held
                                                 # out for the apply-steering step
-LAYERS=(28 29 30 31)                   # late layers, where steering tends to work best
+LAYERS=(14 15 16 17)                   # late layers — gemma_300m action-expert only has 18 layers (0-17)
 
 EXTRACTION_DIR="${EXTRACTION_DIR:-./results/examples/pi05/${SUITE}_fm}"
 
-# modules_to_hook JSON array, e.g. [["model.vlm_with_expert.layer_hooks.1.28", ...]]
+# modules_to_hook JSON array, e.g. [["model.paligemma_with_expert.gemma_expert.model.layers.14.mlp_gated_residual", ...]]
 MODULE_LIST=$(printf '"model.paligemma_with_expert.gemma_expert.model.layers.%d.mlp_gated_residual",' "${LAYERS[@]}")
 MODULES="[[${MODULE_LIST%,}]]"
 

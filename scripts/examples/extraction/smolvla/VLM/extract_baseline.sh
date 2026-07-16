@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Extract mean-pooled VLM (vision-language backbone) hidden states from a
 # few un-steered SmolVLA rollouts. This is the "layer group 0" data used by
-# scripts/features/speed.py's/z_displacement.py's VLM-based training
+# scripts/features/smolvla/speed.py's/z_displacement.py's VLM-based training
 # commands (train-regression-vlm-clf, train-diff-means-vlm-clf).
 set -euo pipefail
 
