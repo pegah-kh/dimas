@@ -330,16 +330,22 @@ def apply_steering_ot_flow_matching_with_classifier_high_to_low_pi05(
     model = vector['classifiers'][step]
 
     chunk_intervention = []
+    chunk_probs = []
     for j in range(10):
         h = x[:, j].float().cpu().numpy().reshape(1, -1)
         prob_fast = model.predict_proba(h)[0][1]
+        chunk_probs.append(prob_fast)
         chunk_intervention.append(prob_fast>0.5)
 
 
     intervention = sum(chunk_intervention) > 5
+    print(f"[Classifier H2L pi05] step={step} | prob_high(mean)={np.mean(chunk_probs):.3f} | "
+          f"n_tokens_over_0.5={sum(chunk_intervention)}/10 | intervene={intervention}")
     if intervention == False:
+        print(f"[Skip H2L pi05] step={step} | not enough tokens over threshold")
         INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_high": float(prob_fast), "reason": "classifier_skip"})
     else:
+        print(f"[Steering H2L pi05] step={step} | prob_high(mean)={np.mean(chunk_probs):.3f} | alpha={alpha}")
         # High → steer toward low using coupling Xs→Xt
         coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=high states, Xt=low states
         for j in range(10):
@@ -441,17 +447,23 @@ def apply_steering_ot_flow_matching_with_classifier_low_to_high_pi05(
 
     model = vector['classifiers'][step]
     chunk_intervention = []
+    chunk_probs = []
     for j in range(10):
         h = x[:, j].float().cpu().numpy().reshape(1, -1)
         prob_fast = model.predict_proba(h)[0][1]
+        chunk_probs.append(prob_fast)
         chunk_intervention.append(prob_fast<0.5)
 
 
     intervention = sum(chunk_intervention) > 5
+    print(f"[Classifier L2H pi05] step={step} | prob_fast(mean)={np.mean(chunk_probs):.3f} | "
+          f"n_tokens_under_0.5={sum(chunk_intervention)}/10 | intervene={intervention}")
 
     if intervention == False:
+        print(f"[Skip L2H pi05] step={step} | not enough tokens under threshold")
         INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_fast": float(prob_fast), "reason": "classifier_skip"})
     else:
+        print(f"[Steering L2H pi05] step={step} | prob_fast(mean)={np.mean(chunk_probs):.3f} | alpha={alpha}")
         # Slow -> steer to fast using transposed coupling
 
         coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=fast states, Xt=slow states

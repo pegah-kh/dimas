@@ -72,7 +72,7 @@ def get_feature_distribution(all_data, episode_list, success_only=True, each_n_s
                 success += 1
 
             if (success_only and ep_success) or not success_only:
-                all_features.append(ep_feature.data.numpy())
+                all_features.append(ep_feature)
 
 
     feature = np.concatenate(all_features, axis=0) if all_features else None
@@ -316,12 +316,12 @@ def fm_steering_generate_regression_with_classifier(layer_num, extraction_dir, e
     train_episodes = episode_list[:n_train_tasks] if n_train_tasks else episode_list
     all_data = load_episode_data(extraction_dir, train_episodes, flat=True)
 
-    feature, _ = get_feature_distribution(all_data, train_episodes, success_only=True)
+    feature, _ = get_feature_distribution(all_data, train_episodes, success_only=True, each_n_steps=10)
     q_low_val  = float(np.quantile(feature, low_q))
     q_high_val = float(np.quantile(feature, high_q))
     print(f"Feature quantiles — q_low ({low_q}): {q_low_val:.4f} | q_high ({high_q}): {q_high_val:.4f}")
 
-    success_labels = get_success_labels(all_data, train_episodes, success_only=False)
+    success_labels = get_success_labels(all_data, train_episodes, success_only=False, each_n_steps=10)
 
     for j, step in enumerate(steps):
         all_repr = []
@@ -387,7 +387,7 @@ def get_OT_flow_matching(repr, feature, low_thresh, high_thresh, ot_type='lowran
     high_feature_idx = np.where(feature > high_thresh)[0]
     low_feature_idx = np.where(feature < low_thresh)[0]
 
-    print('Number of Xs : ' , len(low_feature_idx))
+    print('Number of Xt : ' , len(low_feature_idx))
     print('Number of Xs : ' , len(high_feature_idx))
     
     Xs = repr[high_feature_idx]
@@ -447,10 +447,10 @@ def fm_steering_generate_OT(layer_num, extraction_dir, episode_list,
     all_data = load_episode_data(extraction_dir, episode_list, flat=True)
 
     # ── Speed distribution ────────────────────────────────────────────────
-    feature_train, _ = get_feature_distribution(all_data, train_episodes, success_only=True, max_ep_per_task=max_ep_per_task)
+    feature_train, _ = get_feature_distribution(all_data, train_episodes, success_only=True, each_n_steps=10, max_ep_per_task=max_ep_per_task)
     has_test = bool(test_episodes)
     if has_test:
-        feature_test, _ = get_feature_distribution(all_data, test_episodes, success_only=True, max_ep_per_task=max_ep_per_task)
+        feature_test, _ = get_feature_distribution(all_data, test_episodes, success_only=True, each_n_steps=10, max_ep_per_task=max_ep_per_task)
 
     if low_thresh is None:
         low_thresh  = float(np.quantile(feature_train, low_quantile))
@@ -459,9 +459,9 @@ def fm_steering_generate_OT(layer_num, extraction_dir, episode_list,
     print(f"Thresholds -> low={low_thresh:.4f} (q{low_quantile}) | high={high_thresh:.4f} (q{high_quantile})")
 
     # ── Success labels ────────────────────────────────────────────────────
-    success_train = get_success_labels(all_data, train_episodes, success_only=False, max_ep_per_task=max_ep_per_task)
+    success_train = get_success_labels(all_data, train_episodes, success_only=False, each_n_steps=10, max_ep_per_task=max_ep_per_task)
     if has_test:
-        success_test = get_success_labels(all_data, test_episodes, success_only=False, max_ep_per_task=max_ep_per_task)
+        success_test = get_success_labels(all_data, test_episodes, success_only=False, each_n_steps=10, max_ep_per_task=max_ep_per_task)
 
     for j, step in enumerate(steps):
         train_repr = []

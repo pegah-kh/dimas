@@ -362,7 +362,7 @@ def get_OT_flow_matching(repr, feature, low_thresh, high_thresh, ot_type='lowran
     high_feature_idx = np.where(feature > high_thresh)[0]
     low_feature_idx = np.where(feature < low_thresh)[0]
 
-    print('Number of Xs : ' , len(low_feature_idx))
+    print('Number of Xt : ' , len(low_feature_idx))
     print('Number of Xs : ' , len(high_feature_idx))
     
     Xs = repr[high_feature_idx]
