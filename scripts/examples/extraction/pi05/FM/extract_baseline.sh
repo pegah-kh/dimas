@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Extract per-denoising-step hidden states from the flow-matching / action-
 # expert layers ("layer group 1") of a few un-steered PI-0.5 rollouts.
+# Captures all 10 tokens of the action chunk (no --token_idx restriction),
+# since PI-0.5's steering functions (get_hidden_repr / apply_steering_*_pi05)
+# treat each of the 10 chunk tokens as a separate training/steering sample.
 # This is the data consumed by steering/pi05/speed/01_train_steering_vector.sh
 # and steering/pi05/z-displacement/01_train_steering_vector.sh.
 set -euo pipefail
@@ -25,7 +28,7 @@ EXTRACTION_DIR="${EXTRACTION_DIR:-./results/examples/pi05/${SUITE}_fm}"
 MODULE_LIST=$(printf '"model.paligemma_with_expert.gemma_expert.model.layers.%d.mlp_gated_residual",' "${LAYERS[@]}")
 MODULES="[[${MODULE_LIST%,}]]"
 
-HOOK='["save_input_hidden_states_given_token_idx"]'
+HOOK='["save_input_hidden_states"]'
 
 echo "[Extract FM hidden states] ${SUITE} task_ids=${TASK_IDS}"
 python "$EVAL_SCRIPT" \
@@ -37,7 +40,6 @@ python "$EVAL_SCRIPT" \
     --eval.n_episodes="$N_EPISODES" \
     --output_dir="$EXTRACTION_DIR" \
     --modules_to_hook="$MODULES" \
-    --hook_names="$HOOK" \
-    --token_idx="[0]"
+    --hook_names="$HOOK"
 
 echo "=== Done: FM extraction for ${SUITE} -> ${EXTRACTION_DIR} ==="
