@@ -35,5 +35,3 @@ class FeatureExtractionPipelineConfig(EvalPipelineConfig):
 
 
     replaced_instruction: str | None = None
-    pickup_filter: bool = False
-    use_grasping_filter: bool = True

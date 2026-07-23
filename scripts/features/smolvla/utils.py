@@ -25,12 +25,12 @@ GET_FEATURE_FUNC = None
 FEATURE_TAG = None
 
 def set_feature_func_speed():
-    global GET_FEATURE_FUNC
+    global GET_FEATURE_FUNC, FEATURE_TAG
     GET_FEATURE_FUNC = get_speed
     FEATURE_TAG = "speed"
 
 def set_feature_func_eef_height_displacement():
-    global GET_FEATURE_FUNC
+    global GET_FEATURE_FUNC, FEATURE_TAG
     GET_FEATURE_FUNC = get_eef_height_displacement
     FEATURE_TAG = "eef_height_displacement"
 
@@ -145,7 +145,7 @@ def vlm_steering_generate_regression_with_classifier(layer_num, extraction_dir, 
 
     layer = f'model.vlm_with_expert.layer_hooks.0.{layer_num}'
 
-    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_vlm")
+    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_mean_vlm")
     all_repr = []
     for episode in episode_list:
         all_repr.append(get_hidden_repr(all_data[episode], layer_key=layer))
@@ -209,7 +209,7 @@ def vlm_steering_generate_diff_means_with_classifier(layer_num, extraction_dir, 
 
     layer = f'model.vlm_with_expert.layer_hooks.0.{layer_num}'
 
-    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_vlm")
+    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_mean_vlm")
     all_repr = []
     for episode in episode_list:
         all_repr.append(get_hidden_repr(all_data[episode], layer_key=layer))
@@ -362,7 +362,7 @@ def get_OT_flow_matching(repr, feature, low_thresh, high_thresh, ot_type='lowran
     high_feature_idx = np.where(feature > high_thresh)[0]
     low_feature_idx = np.where(feature < low_thresh)[0]
 
-    print('Number of Xs : ' , len(low_feature_idx))
+    print('Number of Xt : ' , len(low_feature_idx))
     print('Number of Xs : ' , len(high_feature_idx))
     
     Xs = repr[high_feature_idx]

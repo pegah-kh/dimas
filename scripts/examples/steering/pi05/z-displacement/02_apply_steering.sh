@@ -20,11 +20,11 @@ EVAL_SCRIPT="$XL_VLAS_ROOT/src/xl_vlas/save_features.py"
 POLICY_PATH="${POLICY_PATH:-lerobot/pi05-libero}"
 SUITE="${SUITE:-libero_object}"
 N_EPISODES="${N_EPISODES:-10}"
-LAYER="${LAYER:-30}"
+LAYER="${LAYER:-17}"  # gemma_300m action-expert only has 18 layers (0-17)
 ALPHA="${ALPHA:-0.5}"
 
 VECS_DIR="${VECS_DIR:-./results/examples/vectors/z-displacement/pi05}"
-VECTOR="$VECS_DIR/FM_eef_height_steering_vecs_OT__${SUITE}_layer${LAYER}.pt"
+VECTOR="$VECS_DIR/FM_steering_vecs_OT_eef_height_displacement_${SUITE}_layer${LAYER}.pt"
 OUTPUT_DIR="${OUTPUT_DIR:-./results/examples/steered/z-displacement/pi05}"
 
 if [[ ! -f "$VECTOR" ]]; then

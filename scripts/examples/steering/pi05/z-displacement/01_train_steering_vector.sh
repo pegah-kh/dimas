@@ -27,7 +27,7 @@ HEIGHT_SCRIPT="$XL_VLAS_ROOT/scripts/features/pi05/z_displacement.py"
 
 SUITE="${SUITE:-libero_object}"
 N_EPISODES="${N_EPISODES:-10}"
-LAYER="${LAYER:-30}"
+LAYER="${LAYER:-17}"  # gemma_300m action-expert only has 18 layers (0-17)
 
 EXTRACTION_DIR="${EXTRACTION_DIR:-./results/examples/pi05/${SUITE}_fm}"
 VECS_DIR="${VECS_DIR:-./results/examples/vectors/z-displacement/pi05}"
@@ -52,4 +52,4 @@ python "$HEIGHT_SCRIPT" \
     --n-episodes-per-task "$N_EPISODES" \
     --n-train-tasks 4
 
-echo "=== Done: vector saved under ${VECS_DIR}/FM_eef_height_steering_vecs_OT_${SUFFIX}.pt ==="
+echo "=== Done: vector saved under ${VECS_DIR}/FM_steering_vecs_OT_eef_height_displacement${SUFFIX}.pt ==="

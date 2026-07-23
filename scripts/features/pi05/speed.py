@@ -1,6 +1,6 @@
 import argparse
 
-from scripts.features.pi05.utils import (vlm_steering_generate_regression_with_classifier,
+from utils import (vlm_steering_generate_regression_with_classifier,
                                           vlm_steering_generate_diff_means_with_classifier, 
                                           fm_steering_generate_regression_with_classifier, 
                                           fm_steering_generate_OT,
@@ -46,13 +46,17 @@ def build_parser():
     s.add_argument("--high-q", type=float, default=0.75)
 
 
-    # train-OT-pegah
-    s = sub.add_parser("train-OT-pegah", help="Train steering vector with Optimal Transport")
+    # train-OT
+    s = sub.add_parser("train-OT", help="Train steering vector with Optimal Transport")
     s.add_argument("--steps",       nargs="+", type=int, default=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     s.add_argument("--low-thresh",  type=float, default=None)
     s.add_argument("--high-thresh", type=float, default=None)
+    s.add_argument("--mode",   choices=["classifier", "regressor"], default="classifier")
+    s.add_argument("--kernel", choices=["linear", "rbf"],           default="linear")
     s.add_argument("--low-q",  type=float, default=0.45)
     s.add_argument("--high-q", type=float, default=0.75)
+    s.add_argument("--n-episodes-per-task", type=int, default=None,
+                   help="Use only the first N rollouts per task folder (default: all)")
     s.add_argument("--n-train-tasks", type=int, default=5,
                     help="Number of leading --episodes entries used to fit the OT coupling "
                          "(the rest are only used for the unused test-accuracy print). "
@@ -84,8 +88,7 @@ def main():
                                             low_q=args.low_q,
                                             high_q=args.high_q,
                                             output_dir=args.output_dir,
-                                            suffix=args.suffix,
-                                            extraction_suffix=args.extraction_suffix)
+                                            suffix=args.suffix)
 
 
     elif args.command == "train-regression-vlm":
@@ -94,8 +97,7 @@ def main():
                                             low_q=args.low_q,
                                             high_q=args.high_q,
                                             output_dir=args.output_dir,
-                                            suffix=args.suffix,
-                                            extraction_suffix=args.extraction_suffix)
+                                            suffix=args.suffix)
 
 
     elif args.command == "train-diff-means-vlm":
@@ -104,21 +106,24 @@ def main():
                                             low_q=args.low_q,
                                             high_q=args.high_q,
                                             output_dir=args.output_dir,
-                                            suffix=args.suffix,
-                                            extraction_suffix=args.extraction_suffix)
+                                            suffix=args.suffix)
 
-        
-    elif args.command == "train-OT-pegah":
+
+    elif args.command == "train-OT":
         for layer_num in layer_nums:
             fm_steering_generate_OT(layer_num, extraction_dir, episode_list,
+                                    mode=args.mode,
+                                    kernel=args.kernel,
                                     steps=args.steps,
                                     num_steps=len(args.steps),
+                                    low_thresh=args.low_thresh,
+                                    high_thresh=args.high_thresh,
                                     low_quantile=args.low_q,
                                     high_quantile=args.high_q,
+                                    n_train_tasks=args.n_train_tasks,
+                                    max_ep_per_task=args.n_episodes_per_task,
                                     output_dir=args.output_dir,
-                                    suffix=args.suffix,
-                                    extraction_suffix=args.extraction_suffix,
-                                    n_train_tasks=args.n_train_tasks)
+                                    suffix=args.suffix or '')
 
         
 

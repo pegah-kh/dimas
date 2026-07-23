@@ -31,12 +31,12 @@ FEATURE_TAG = None
 
 
 def set_feature_func_speed():
-    global GET_FEATURE_FUNC
+    global GET_FEATURE_FUNC, FEATURE_TAG
     GET_FEATURE_FUNC = get_speed
     FEATURE_TAG = "speed"
 
 def set_feature_func_eef_height_displacement():
-    global GET_FEATURE_FUNC
+    global GET_FEATURE_FUNC, FEATURE_TAG
     GET_FEATURE_FUNC = get_eef_height_displacement
     FEATURE_TAG = "eef_height_displacement"
 
@@ -72,7 +72,7 @@ def get_feature_distribution(all_data, episode_list, success_only=True, each_n_s
                 success += 1
 
             if (success_only and ep_success) or not success_only:
-                all_features.append(ep_feature.data.numpy())
+                all_features.append(ep_feature)
 
 
     feature = np.concatenate(all_features, axis=0) if all_features else None
@@ -136,6 +136,10 @@ def get_hidden_repr(episode_data, layer_key=None, fm_time_step=None, max_ep_per_
             # FM case: hs is indexed by denoising step
             # VLM case: hs is the repr directly
             repr_i = hs[fm_time_step] if fm_time_step is not None else hs[0]
+            # Only the first n_action_steps=10 of the chunk_size=50 predicted tokens are
+            # actually queued/executed by select_action() (actions[:, :n_action_steps] in
+            # modeling_pi05.py) — the rest are computed but discarded, so keep only those.
+            repr_i = repr_i[:10]
             if repr_i.shape[0] > 1:
                 for i in range(repr_i.shape[0]):
                     all_repr.append(repr_i[i].unsqueeze(0)) # this is to have separate representation for each of the tokens in flow matching of pi05
@@ -150,10 +154,13 @@ def get_hidden_repr(episode_data, layer_key=None, fm_time_step=None, max_ep_per_
     return torch.cat(all_repr, dim=0)
 
 
-def load_episode_data(extraction_dir, episode_list, suffix_episode=""):
+def load_episode_data(extraction_dir, episode_list, suffix_episode="", flat=False):
     all_data = {}
     for episode in episode_list:
-        path = os.path.join(extraction_dir, episode+suffix_episode, 'videos', episode[5:], 'episode_output_data.pt')
+        if flat:
+            path = os.path.join(extraction_dir, 'videos', episode, 'episode_output_data.pt')
+        else:
+            path = os.path.join(extraction_dir, episode + suffix_episode, 'videos', episode, 'episode_output_data.pt')
         all_data[episode] = torch.load(path)
     return all_data
 
@@ -165,8 +172,8 @@ def vlm_steering_generate_regression_with_classifier(layer_num, extraction_dir, 
     layer = f'model.paligemma_with_expert.paligemma.model.language_model.layers.{layer_num}.mlp_gated_residual'
     
     all_repr = []
-    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_vlm")
-    
+    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_mean_vlm")
+
     for episode in episode_list:
         all_repr.append(get_hidden_repr(all_data[episode], layer_key=layer))
 
@@ -233,7 +240,7 @@ def vlm_steering_generate_diff_means_with_classifier(layer_num, extraction_dir, 
     layer = f'model.paligemma_with_expert.paligemma.model.language_model.layers.{layer_num}.mlp_gated_residual'
 
     all_repr = []
-    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_vlm")  # Load all data once
+    all_data = load_episode_data(extraction_dir, episode_list, suffix_episode="_mean_vlm")  # Load all data once
     for episode in episode_list:
         all_repr.append(get_hidden_repr(all_data[episode], layer_key=layer))
 
@@ -311,14 +318,14 @@ def fm_steering_generate_regression_with_classifier(layer_num, extraction_dir, e
     classifiers_low  = [None] * num_steps
     classifiers_high = [None] * num_steps
     train_episodes = episode_list[:n_train_tasks] if n_train_tasks else episode_list
-    all_data = load_episode_data(extraction_dir, train_episodes, suffix_episode="_fm")
+    all_data = load_episode_data(extraction_dir, train_episodes, flat=True)
 
-    feature, _ = get_feature_distribution(all_data, train_episodes, success_only=True)
+    feature, _ = get_feature_distribution(all_data, train_episodes, success_only=True, each_n_steps=1)
     q_low_val  = float(np.quantile(feature, low_q))
     q_high_val = float(np.quantile(feature, high_q))
     print(f"Feature quantiles — q_low ({low_q}): {q_low_val:.4f} | q_high ({high_q}): {q_high_val:.4f}")
 
-    success_labels = get_success_labels(all_data, train_episodes, success_only=False)
+    success_labels = get_success_labels(all_data, train_episodes, success_only=False, each_n_steps=1)
 
     for j, step in enumerate(steps):
         all_repr = []
@@ -384,7 +391,7 @@ def get_OT_flow_matching(repr, feature, low_thresh, high_thresh, ot_type='lowran
     high_feature_idx = np.where(feature > high_thresh)[0]
     low_feature_idx = np.where(feature < low_thresh)[0]
 
-    print('Number of Xs : ' , len(low_feature_idx))
+    print('Number of Xt : ' , len(low_feature_idx))
     print('Number of Xs : ' , len(high_feature_idx))
     
     Xs = repr[high_feature_idx]
@@ -441,13 +448,13 @@ def fm_steering_generate_OT(layer_num, extraction_dir, episode_list,
     if max_ep_per_task is not None:
         print(f"Using first {max_ep_per_task} rollouts per task")
 
-    all_data = load_episode_data(extraction_dir, train_episodes, suffix_episode="_fm")
+    all_data = load_episode_data(extraction_dir, episode_list, flat=True)
 
     # ── Speed distribution ────────────────────────────────────────────────
-    feature_train, _ = get_feature_distribution(all_data, train_episodes, success_only=True, max_ep_per_task=max_ep_per_task)
+    feature_train, _ = get_feature_distribution(all_data, train_episodes, success_only=True, each_n_steps=1, max_ep_per_task=max_ep_per_task)
     has_test = bool(test_episodes)
     if has_test:
-        feature_test, _ = get_feature_distribution(all_data, test_episodes, success_only=True, max_ep_per_task=max_ep_per_task)
+        feature_test, _ = get_feature_distribution(all_data, test_episodes, success_only=True, each_n_steps=1, max_ep_per_task=max_ep_per_task)
 
     if low_thresh is None:
         low_thresh  = float(np.quantile(feature_train, low_quantile))
@@ -456,9 +463,9 @@ def fm_steering_generate_OT(layer_num, extraction_dir, episode_list,
     print(f"Thresholds -> low={low_thresh:.4f} (q{low_quantile}) | high={high_thresh:.4f} (q{high_quantile})")
 
     # ── Success labels ────────────────────────────────────────────────────
-    success_train = get_success_labels(all_data, train_episodes, success_only=False, max_ep_per_task=max_ep_per_task)
+    success_train = get_success_labels(all_data, train_episodes, success_only=False, each_n_steps=1, max_ep_per_task=max_ep_per_task)
     if has_test:
-        success_test = get_success_labels(all_data, test_episodes, success_only=False, max_ep_per_task=max_ep_per_task)
+        success_test = get_success_labels(all_data, test_episodes, success_only=False, each_n_steps=1, max_ep_per_task=max_ep_per_task)
 
     for j, step in enumerate(steps):
         train_repr = []
