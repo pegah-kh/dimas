@@ -39,7 +39,9 @@ def _parse_camera_names(camera_name: str | Sequence[str]) -> list[str]:
     elif isinstance(camera_name, (list | tuple)):
         cams = [str(c).strip() for c in camera_name if str(c).strip()]
     else:
-        raise TypeError(f"camera_name must be str or sequence[str], got {type(camera_name).__name__}")
+        raise TypeError(
+            f"camera_name must be str or sequence[str], got {type(camera_name).__name__}"
+        )
     if not cams:
         raise ValueError("camera_name resolved to an empty list.")
     return cams
@@ -49,7 +51,9 @@ def _get_suite(name: str) -> benchmark.Benchmark:
     """Instantiate a LIBERO suite by name with clear validation."""
     bench = benchmark.get_benchmark_dict()
     if name not in bench:
-        raise ValueError(f"Unknown LIBERO suite '{name}'. Available: {', '.join(sorted(bench.keys()))}")
+        raise ValueError(
+            f"Unknown LIBERO suite '{name}'. Available: {', '.join(sorted(bench.keys()))}"
+        )
     suite = bench[name]()
     if not getattr(suite, "tasks", None):
         raise ValueError(f"Suite '{name}' has no tasks.")
@@ -145,10 +149,14 @@ class LiberoEnv(gym.Env):
         self.episode_index = episode_index
         self.episode_length = episode_length
         # Load once and keep
-        self._init_states = get_task_init_states(task_suite, self.task_id) if self.init_states else None
+        self._init_states = (
+            get_task_init_states(task_suite, self.task_id) if self.init_states else None
+        )
         self._reset_stride = n_envs  # when performing a reset, append `_reset_stride` to `init_state_id`.
 
-        self.init_state_id = self.episode_index  # tie each sub-env to a fixed init state
+        self.init_state_id = (
+            self.episode_index
+        )  # tie each sub-env to a fixed init state
 
         self._env = self._make_envs_task(task_suite, self.task_id)
         default_steps = 500
@@ -187,29 +195,56 @@ class LiberoEnv(gym.Env):
                         {
                             "eef": spaces.Dict(
                                 {
-                                    "pos": spaces.Box(low=-np.inf, high=np.inf, shape=(3,), dtype=np.float64),
+                                    "pos": spaces.Box(
+                                        low=-np.inf,
+                                        high=np.inf,
+                                        shape=(3,),
+                                        dtype=np.float64,
+                                    ),
                                     "quat": spaces.Box(
-                                        low=-np.inf, high=np.inf, shape=(4,), dtype=np.float64
+                                        low=-np.inf,
+                                        high=np.inf,
+                                        shape=(4,),
+                                        dtype=np.float64,
                                     ),
                                     "mat": spaces.Box(
-                                        low=-np.inf, high=np.inf, shape=(3, 3), dtype=np.float64
+                                        low=-np.inf,
+                                        high=np.inf,
+                                        shape=(3, 3),
+                                        dtype=np.float64,
                                     ),
                                 }
                             ),
                             "gripper": spaces.Dict(
                                 {
                                     "qpos": spaces.Box(
-                                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64
+                                        low=-np.inf,
+                                        high=np.inf,
+                                        shape=(2,),
+                                        dtype=np.float64,
                                     ),
                                     "qvel": spaces.Box(
-                                        low=-np.inf, high=np.inf, shape=(2,), dtype=np.float64
+                                        low=-np.inf,
+                                        high=np.inf,
+                                        shape=(2,),
+                                        dtype=np.float64,
                                     ),
                                 }
                             ),
                             "joints": spaces.Dict(
                                 {
-                                    "pos": spaces.Box(low=-np.inf, high=np.inf, shape=(7,), dtype=np.float64),
-                                    "vel": spaces.Box(low=-np.inf, high=np.inf, shape=(7,), dtype=np.float64),
+                                    "pos": spaces.Box(
+                                        low=-np.inf,
+                                        high=np.inf,
+                                        shape=(7,),
+                                        dtype=np.float64,
+                                    ),
+                                    "vel": spaces.Box(
+                                        low=-np.inf,
+                                        high=np.inf,
+                                        shape=(7,),
+                                        dtype=np.float64,
+                                    ),
                                 }
                             ),
                         }
@@ -231,7 +266,9 @@ class LiberoEnv(gym.Env):
         task = task_suite.get_task(task_id)
         self.task = task.name
         self.task_description = task.language
-        task_bddl_file = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+        task_bddl_file = os.path.join(
+            get_libero_path("bddl_files"), task.problem_folder, task.bddl_file
+        )
 
         env_args = {
             "bddl_file_name": task_bddl_file,
@@ -252,7 +289,9 @@ class LiberoEnv(gym.Env):
         eef_quat = raw_obs.get("robot0_eef_quat")
 
         # rotation matrix from controller
-        eef_mat = self._env.robots[0].controller.ee_ori_mat if eef_pos is not None else None
+        eef_mat = (
+            self._env.robots[0].controller.ee_ori_mat if eef_pos is not None else None
+        )
         gripper_qpos = raw_obs.get("robot0_gripper_qpos")
         gripper_qvel = raw_obs.get("robot0_gripper_qvel")
         joint_pos = raw_obs.get("robot0_joint_pos")
@@ -298,7 +337,9 @@ class LiberoEnv(gym.Env):
         self._env.seed(seed)
         raw_obs = self._env.reset()
         if self.init_states and self._init_states is not None:
-            raw_obs = self._env.set_init_state(self._init_states[self.init_state_id % len(self._init_states)])
+            raw_obs = self._env.set_init_state(
+                self._init_states[self.init_state_id % len(self._init_states)]
+            )
             self.init_state_id += self._reset_stride  # Change init_state_id when reset
 
         # After reset, objects may be unstable (slightly floating, intersecting, etc.).
@@ -319,7 +360,9 @@ class LiberoEnv(gym.Env):
         info = {"is_success": False}
         return observation, info
 
-    def step(self, action: np.ndarray) -> tuple[RobotObservation, float, bool, bool, dict[str, Any]]:
+    def step(
+        self, action: np.ndarray
+    ) -> tuple[RobotObservation, float, bool, bool, dict[str, Any]]:
         if action.ndim != 1:
             raise ValueError(
                 f"Expected action to be 1-D (shape (action_dim,)), "
@@ -345,7 +388,7 @@ class LiberoEnv(gym.Env):
                 "done": bool(done),
                 "is_success": bool(is_success),
             }
-            #self.reset()
+            # self.reset()
         truncated = False
         return observation, reward, terminated, truncated, info
 
@@ -413,12 +456,16 @@ def create_libero_envs(
         - You may pass `task_ids` (list[int]) inside `gym_kwargs` to restrict tasks per suite.
     """
     if env_cls is None or not callable(env_cls):
-        raise ValueError("env_cls must be a callable that wraps a list of environment factory callables.")
+        raise ValueError(
+            "env_cls must be a callable that wraps a list of environment factory callables."
+        )
     if not isinstance(n_envs, int) or n_envs <= 0:
         raise ValueError(f"n_envs must be a positive int; got {n_envs}.")
 
     gym_kwargs = dict(gym_kwargs or {})
-    task_ids_filter = gym_kwargs.pop("task_ids", None)  # optional: limit to specific tasks
+    task_ids_filter = gym_kwargs.pop(
+        "task_ids", None
+    )  # optional: limit to specific tasks
     episode_index_offset = gym_kwargs.pop("episode_index_offset", 0)
 
     camera_names = _parse_camera_names(camera_name)
@@ -438,7 +485,9 @@ def create_libero_envs(
         total = len(suite.tasks)
         selected = _select_task_ids(total, task_ids_filter)
         if not selected:
-            raise ValueError(f"No tasks selected for suite '{suite_name}' (available: {total}).")
+            raise ValueError(
+                f"No tasks selected for suite '{suite_name}' (available: {total})."
+            )
 
         for tid in selected:
             fns = _make_env_fns(
@@ -454,7 +503,9 @@ def create_libero_envs(
                 episode_index_offset=episode_index_offset,
             )
             out[suite_name][tid] = env_cls(fns)
-            print(f"Built vec env | suite={suite_name} | task_id={tid} | n_envs={n_envs}")
+            print(
+                f"Built vec env | suite={suite_name} | task_id={tid} | n_envs={n_envs}"
+            )
 
     # return plain dicts for predictability
     return {suite: dict(task_map) for suite, task_map in out.items()}

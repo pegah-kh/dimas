@@ -7,10 +7,8 @@ import warnings
 from functools import partial
 from typing import Any, Callable, Dict, List, Tuple, Union
 import pickle
-from xml.parsers.expat import model
 import numpy as np
 import torch
-from tqdm import tqdm
 
 __all__ = [
     "register_hooks",
@@ -26,7 +24,7 @@ __all__ = [
 HIDDEN_STATES = {}
 
 # Flow matching step
-FLOW_MATCHING_STATE = {'STEP': 0}
+FLOW_MATCHING_STATE = {"STEP": 0}
 
 # Intervention log
 INTERVENTION_LOG = []
@@ -37,6 +35,7 @@ def reset_flow_matching_state() -> None:
     """Reset flow-matching state at episode boundaries."""
     global FLOW_MATCHING_STATE
     FLOW_MATCHING_STATE["STEP"] = 0
+
 
 def reset_interventions_log() -> None:
     """Reset intervention log at episode boundaries."""
@@ -158,39 +157,39 @@ def save_hidden_states_output(module_name: str = "", **kwargs: Any):
     return hook
 
 
-
-
 def apply_steering_regression_vlm_with_classifier(
     x: torch.Tensor,
     vector: dict,
 ) -> torch.Tensor:
     global INTERVENTION_LOG
-    clf = pickle.loads(vector['classifiers'])
+    clf = pickle.loads(vector["classifiers"])
 
     assert x.shape[1] > 1
     mean_token_ = torch.mean(x, dim=1).float()
-    mean_token  = mean_token_.cpu().numpy()
+    mean_token = mean_token_.cpu().numpy()
     proba = clf.predict_proba(mean_token)
     pos_class_idx = list(clf.classes_).index(1)
     prob_positive = float(proba[0, pos_class_idx])
 
     intervened = prob_positive > 0.5
-    INTERVENTION_LOG.append({"fm_step": None, "intervened": intervened, "prob_positive": prob_positive})
+    INTERVENTION_LOG.append(
+        {"fm_step": None, "intervened": intervened, "prob_positive": prob_positive}
+    )
 
     if intervened:
-        bias       = vector['classifier'][0, 0, 0]
-        clf_vector = vector['classifier'][0, :, 1:]
-        steer_vec  = vector['steering'][0]
-        s_star     = vector['q_target']
+        bias = vector["classifier"][0, 0, 0]
+        clf_vector = vector["classifier"][0, :, 1:]
+        steer_vec = vector["steering"][0]
+        s_star = vector["q_target"]
 
         clf_vector_ = clf_vector.to(x.device).to(x.dtype)
-        steer_vec_  = steer_vec.to(x.device).to(x.dtype)
-        bias_       = torch.tensor(bias, device=x.device, dtype=x.dtype)
-        s_star_     = torch.tensor(s_star, device=x.device, dtype=x.dtype)
+        steer_vec_ = steer_vec.to(x.device).to(x.dtype)
+        bias_ = torch.tensor(bias, device=x.device, dtype=x.dtype)
+        s_star_ = torch.tensor(s_star, device=x.device, dtype=x.dtype)
 
         w_norm = torch.linalg.norm(clf_vector_)
-        s_hat  = (mean_token_.to(x.device).to(x.dtype) * clf_vector_).sum() + bias_
-        alpha  = (s_star_ - s_hat) / w_norm
+        s_hat = (mean_token_.to(x.device).to(x.dtype) * clf_vector_).sum() + bias_
+        alpha = (s_star_ - s_hat) / w_norm
 
         x[:, :, :] += alpha * steer_vec_
 
@@ -203,7 +202,7 @@ def apply_steering_diff_means_vlm_with_classifier(
     alpha: float = 1.0,
 ) -> torch.Tensor:
     global INTERVENTION_LOG
-    clf = pickle.loads(vector['classifiers'])
+    clf = pickle.loads(vector["classifiers"])
 
     assert x.shape[1] > 1
     mean_token = torch.mean(x, dim=1).float().cpu().numpy()
@@ -212,10 +211,12 @@ def apply_steering_diff_means_vlm_with_classifier(
     prob_positive = float(proba[0, pos_class_idx])
 
     intervened = prob_positive > 0.5
-    INTERVENTION_LOG.append({"fm_step": None, "intervened": intervened, "prob_positive": prob_positive})
+    INTERVENTION_LOG.append(
+        {"fm_step": None, "intervened": intervened, "prob_positive": prob_positive}
+    )
 
     if intervened:
-        steer_vec  = vector['steering'][0]
+        steer_vec = vector["steering"][0]
         steer_vec_ = steer_vec.to(x.device).to(x.dtype)
         x[:, :, :] += alpha * steer_vec_
 
@@ -230,28 +231,30 @@ def apply_steering_regression_flow_matching_with_classifier(
     global FLOW_MATCHING_STATE, INTERVENTION_LOG
     step = FLOW_MATCHING_STATE["STEP"]
 
-    clf = pickle.loads(vector['classifiers'][step])
+    clf = pickle.loads(vector["classifiers"][step])
     proba = clf.predict_proba(x[:, 0].float().cpu().numpy())
     pos_class_idx = list(clf.classes_).index(1)
     prob_positive = float(proba[0, pos_class_idx])
 
     intervened = prob_positive > 0.5
-    INTERVENTION_LOG.append({"fm_step": step, "intervened": intervened, "prob_positive": prob_positive})
+    INTERVENTION_LOG.append(
+        {"fm_step": step, "intervened": intervened, "prob_positive": prob_positive}
+    )
 
     if intervened:
-        bias       = vector['classifier'][step, 0, 0]
-        clf_vector = vector['classifier'][step, :, 1:]
-        steer_vec  = vector['steering'][step]
-        s_star     = vector['q_target']
+        bias = vector["classifier"][step, 0, 0]
+        clf_vector = vector["classifier"][step, :, 1:]
+        steer_vec = vector["steering"][step]
+        s_star = vector["q_target"]
 
         clf_vector_ = clf_vector.to(x.device).to(x.dtype)
-        steer_vec_  = steer_vec.to(x.device).to(x.dtype)
-        bias_       = torch.tensor(bias, device=x.device, dtype=x.dtype)
-        s_star_     = torch.tensor(s_star, device=x.device, dtype=x.dtype)
+        steer_vec_ = steer_vec.to(x.device).to(x.dtype)
+        bias_ = torch.tensor(bias, device=x.device, dtype=x.dtype)
+        s_star_ = torch.tensor(s_star, device=x.device, dtype=x.dtype)
 
         w_norm = torch.linalg.norm(clf_vector_)
-        s_hat  = (x[:, 0] * clf_vector_).sum() + bias_
-        alpha  = (s_star_ - s_hat) / w_norm
+        s_hat = (x[:, 0] * clf_vector_).sum() + bias_
+        alpha = (s_star_ - s_hat) / w_norm
 
         x[:, 0] = x[:, 0] + alpha * steer_vec_
 
@@ -261,17 +264,25 @@ def apply_steering_regression_flow_matching_with_classifier(
     return x
 
 
-
-def _get_ot_tensors_cached(vector: dict, step: int, device: torch.device, dtype: torch.dtype):
+def _get_ot_tensors_cached(
+    vector: dict, step: int, device: torch.device, dtype: torch.dtype
+):
     """Return (coupling, Xs, Xt) for `step` on (device, dtype), converting once per vector/device/dtype
     and caching on `vector` itself so repeated hook calls (every fm step, every env step) reuse them."""
     cache = vector.setdefault("_ot_gpu_cache", {})
     key = (device, dtype)
     if key not in cache:
         cache[key] = {
-            "ot_couplings": [c.detach().clone().float().to(device).to(dtype) for c in vector["ot_couplings"]],
-            "ot_Xs":        [t.detach().clone().float().to(device).to(dtype) for t in vector["ot_Xs"]],
-            "ot_Xt":        [t.detach().clone().float().to(device).to(dtype) for t in vector["ot_Xt"]],
+            "ot_couplings": [
+                c.detach().clone().float().to(device).to(dtype)
+                for c in vector["ot_couplings"]
+            ],
+            "ot_Xs": [
+                t.detach().clone().float().to(device).to(dtype) for t in vector["ot_Xs"]
+            ],
+            "ot_Xt": [
+                t.detach().clone().float().to(device).to(dtype) for t in vector["ot_Xt"]
+            ],
         }
     cached = cache[key]
     return cached["ot_couplings"][step], cached["ot_Xs"][step], cached["ot_Xt"][step]
@@ -289,31 +300,46 @@ def apply_steering_ot_flow_matching_with_classifier_high_to_low(
 
     h = x[:, 0].float().cpu().numpy().reshape(1, -1)
 
-    model = vector['classifiers'][step]
+    model = vector["classifiers"][step]
     prob_fast = model.predict_proba(h)[0][1]
 
     print(f"[Classifier H2L] step={step} | prob_high={prob_fast:.3f}")
 
     if prob_fast < 0.5:
         print(f"[Skip H2L] already low (prob_high={prob_fast:.3f})")
-        INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_high": float(prob_fast), "reason": "classifier_skip"})
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": False,
+                "prob_high": float(prob_fast),
+                "reason": "classifier_skip",
+            }
+        )
     else:
         # High → steer toward low using coupling Xs→Xt
-        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=high states, Xt=low states
+        coupling, Xs, Xt = _get_ot_tensors_cached(
+            vector, step, x.device, x.dtype
+        )  # Xs=high states, Xt=low states
 
-        x_h           = x[:, 0].to(Xs.dtype)
-        dist          = ((Xs - x_h) ** 2).sum(dim=1)
-        target_idx    = dist.argmin()
-        x_transported = torch.matmul(coupling[target_idx:target_idx + 1, :], Xt)
-        x[:, 0]       = (1 - alpha) * x[:, 0] + alpha * x_transported.to(x.dtype)
+        x_h = x[:, 0].to(Xs.dtype)
+        dist = ((Xs - x_h) ** 2).sum(dim=1)
+        target_idx = dist.argmin()
+        x_transported = torch.matmul(coupling[target_idx : target_idx + 1, :], Xt)
+        x[:, 0] = (1 - alpha) * x[:, 0] + alpha * x_transported.to(x.dtype)
         print(f"[Steering H2L] step={step} | prob_high={prob_fast:.3f} | alpha={alpha}")
-        INTERVENTION_LOG.append({"fm_step": step, "intervened": True, "prob_high": float(prob_fast), "reason": "steered"})
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": True,
+                "prob_high": float(prob_fast),
+                "reason": "steered",
+            }
+        )
 
     if update_fm_step:
         FLOW_MATCHING_STATE["STEP"] += 1
 
     return x
-
 
 
 def apply_steering_ot_flow_matching_with_classifier_high_to_low_pi05(
@@ -326,8 +352,7 @@ def apply_steering_ot_flow_matching_with_classifier_high_to_low_pi05(
     global FLOW_MATCHING_STATE, INTERVENTION_LOG
     step = FLOW_MATCHING_STATE["STEP"]
 
-
-    model = vector['classifiers'][step]
+    model = vector["classifiers"][step]
 
     chunk_intervention = []
     chunk_probs = []
@@ -335,27 +360,46 @@ def apply_steering_ot_flow_matching_with_classifier_high_to_low_pi05(
         h = x[:, j].float().cpu().numpy().reshape(1, -1)
         prob_fast = model.predict_proba(h)[0][1]
         chunk_probs.append(prob_fast)
-        chunk_intervention.append(prob_fast>0.5)
-
+        chunk_intervention.append(prob_fast > 0.5)
 
     intervention = sum(chunk_intervention) > 5
-    print(f"[Classifier H2L pi05] step={step} | prob_high(mean)={np.mean(chunk_probs):.3f} | "
-          f"n_tokens_over_0.5={sum(chunk_intervention)}/10 | intervene={intervention}")
-    if intervention == False:
+    print(
+        f"[Classifier H2L pi05] step={step} | prob_high(mean)={np.mean(chunk_probs):.3f} | "
+        f"n_tokens_over_0.5={sum(chunk_intervention)}/10 | intervene={intervention}"
+    )
+    if not intervention:
         print(f"[Skip H2L pi05] step={step} | not enough tokens over threshold")
-        INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_high": float(prob_fast), "reason": "classifier_skip"})
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": False,
+                "prob_high": float(prob_fast),
+                "reason": "classifier_skip",
+            }
+        )
     else:
-        print(f"[Steering H2L pi05] step={step} | prob_high(mean)={np.mean(chunk_probs):.3f} | alpha={alpha}")
+        print(
+            f"[Steering H2L pi05] step={step} | prob_high(mean)={np.mean(chunk_probs):.3f} | alpha={alpha}"
+        )
         # High → steer toward low using coupling Xs→Xt
-        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=high states, Xt=low states
+        coupling, Xs, Xt = _get_ot_tensors_cached(
+            vector, step, x.device, x.dtype
+        )  # Xs=high states, Xt=low states
         for j in range(10):
             x_h = x[:, j].to(Xs.dtype)
-            dist          = ((Xs - x_h) ** 2).sum(dim=1)
-            target_idx    = dist.argmin()
-            x_transported = torch.matmul(coupling[target_idx:target_idx + 1, :], Xt)
-            x[:, j]       = (1 - alpha) * x[:, j] + alpha * x_transported.to(x.dtype)
+            dist = ((Xs - x_h) ** 2).sum(dim=1)
+            target_idx = dist.argmin()
+            x_transported = torch.matmul(coupling[target_idx : target_idx + 1, :], Xt)
+            x[:, j] = (1 - alpha) * x[:, j] + alpha * x_transported.to(x.dtype)
 
-        INTERVENTION_LOG.append({"fm_step": step, "intervened": True, "prob_high": float(prob_fast), "reason": "steered"})
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": True,
+                "prob_high": float(prob_fast),
+                "reason": "steered",
+            }
+        )
 
     if update_fm_step:
         FLOW_MATCHING_STATE["STEP"] += 1
@@ -379,59 +423,76 @@ def apply_steering_ot_flow_matching_with_classifier_low_to_high(
 
     h = x[:, 0].float().cpu().numpy().reshape(1, -1)
 
-    model = vector['classifiers'][step]
+    model = vector["classifiers"][step]
     prob_fast = model.predict_proba(h)[0][1]
 
     _clf_s = time.time() - _clf_t0
 
-    print(f"[Classifier L2H] step={step} | prob_fast={prob_fast:.3f} | clf_s={_clf_s*1000:.3f}ms")
+    print(
+        f"[Classifier L2H] step={step} | prob_fast={prob_fast:.3f} | clf_s={_clf_s*1000:.3f}ms"
+    )
 
     if prob_fast >= 0.5:
         print(f"[Skip L2H] already fast (prob_fast={prob_fast:.3f})")
-        INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_fast": float(prob_fast), "reason": "classifier_skip", "classifier_s": _clf_s})
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": False,
+                "prob_fast": float(prob_fast),
+                "reason": "classifier_skip",
+                "classifier_s": _clf_s,
+            }
+        )
     else:
         # Slow -> steer to fast using transposed coupling
         if x.is_cuda:
             torch.cuda.synchronize()
         _load_t0 = time.time()
 
-        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=fast states, Xt=slow states
+        coupling, Xs, Xt = _get_ot_tensors_cached(
+            vector, step, x.device, x.dtype
+        )  # Xs=fast states, Xt=slow states
 
         if x.is_cuda:
             torch.cuda.synchronize()
         _load_s = time.time() - _load_t0
 
-        x_h        = x[:, 0].to(Xt.dtype)
+        x_h = x[:, 0].to(Xt.dtype)
 
         if x.is_cuda:
             torch.cuda.synchronize()
         _transport_t0 = time.time()
 
-        dist       = ((Xt - x_h) ** 2).sum(dim=1)
+        dist = ((Xt - x_h) ** 2).sum(dim=1)
         target_idx = dist.argmin()
-        col        = coupling[:, target_idx]           # (N_fast,)
-        x_transported = ((col / col.sum()).unsqueeze(0) @ Xs)  # (1, hidden_dim)
-        x[:, 0]    = (1 - alpha) * x[:, 0] + alpha * x_transported.to(x.dtype)
+        col = coupling[:, target_idx]  # (N_fast,)
+        x_transported = (col / col.sum()).unsqueeze(0) @ Xs  # (1, hidden_dim)
+        x[:, 0] = (1 - alpha) * x[:, 0] + alpha * x_transported.to(x.dtype)
 
         if x.is_cuda:
             torch.cuda.synchronize()
         _transport_s = time.time() - _transport_t0
 
-        print(f"[Steering L2H] step={step} | prob_fast={prob_fast:.3f} | alpha={alpha} | "
-                f"clf_s={_clf_s*1000:.3f}ms load_s={_load_s*1000:.3f}ms transport_s={_transport_s*1000:.3f}ms")
-        INTERVENTION_LOG.append({
-            "fm_step": step, "intervened": True, "prob_fast": float(prob_fast), "reason": "steered",
-            "classifier_s": _clf_s, "load_vectors_s": _load_s, "transport_s": _transport_s,
-        })
+        print(
+            f"[Steering L2H] step={step} | prob_fast={prob_fast:.3f} | alpha={alpha} | "
+            f"clf_s={_clf_s*1000:.3f}ms load_s={_load_s*1000:.3f}ms transport_s={_transport_s*1000:.3f}ms"
+        )
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": True,
+                "prob_fast": float(prob_fast),
+                "reason": "steered",
+                "classifier_s": _clf_s,
+                "load_vectors_s": _load_s,
+                "transport_s": _transport_s,
+            }
+        )
 
     if update_fm_step:
         FLOW_MATCHING_STATE["STEP"] += 1
 
     return x
-
-
-
-
 
 
 def apply_steering_ot_flow_matching_with_classifier_low_to_high_pi05(
@@ -444,50 +505,62 @@ def apply_steering_ot_flow_matching_with_classifier_low_to_high_pi05(
     global FLOW_MATCHING_STATE, INTERVENTION_LOG
     step = FLOW_MATCHING_STATE["STEP"]
 
-
-    model = vector['classifiers'][step]
+    model = vector["classifiers"][step]
     chunk_intervention = []
     chunk_probs = []
     for j in range(10):
         h = x[:, j].float().cpu().numpy().reshape(1, -1)
         prob_fast = model.predict_proba(h)[0][1]
         chunk_probs.append(prob_fast)
-        chunk_intervention.append(prob_fast<0.5)
-
+        chunk_intervention.append(prob_fast < 0.5)
 
     intervention = sum(chunk_intervention) > 5
-    print(f"[Classifier L2H pi05] step={step} | prob_fast(mean)={np.mean(chunk_probs):.3f} | "
-          f"n_tokens_under_0.5={sum(chunk_intervention)}/10 | intervene={intervention}")
+    print(
+        f"[Classifier L2H pi05] step={step} | prob_fast(mean)={np.mean(chunk_probs):.3f} | "
+        f"n_tokens_under_0.5={sum(chunk_intervention)}/10 | intervene={intervention}"
+    )
 
-    if intervention == False:
+    if not intervention:
         print(f"[Skip L2H pi05] step={step} | not enough tokens under threshold")
-        INTERVENTION_LOG.append({"fm_step": step, "intervened": False, "prob_fast": float(prob_fast), "reason": "classifier_skip"})
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": False,
+                "prob_fast": float(prob_fast),
+                "reason": "classifier_skip",
+            }
+        )
     else:
-        print(f"[Steering L2H pi05] step={step} | prob_fast(mean)={np.mean(chunk_probs):.3f} | alpha={alpha}")
+        print(
+            f"[Steering L2H pi05] step={step} | prob_fast(mean)={np.mean(chunk_probs):.3f} | alpha={alpha}"
+        )
         # Slow -> steer to fast using transposed coupling
 
-        coupling, Xs, Xt = _get_ot_tensors_cached(vector, step, x.device, x.dtype)  # Xs=fast states, Xt=slow states
+        coupling, Xs, Xt = _get_ot_tensors_cached(
+            vector, step, x.device, x.dtype
+        )  # Xs=fast states, Xt=slow states
 
         for j in range(10):
             x_h = x[:, j].to(Xt.dtype)
-            dist          = ((Xt - x_h) ** 2).sum(dim=1)
-            target_idx    = dist.argmin()
-            col        = coupling[:, target_idx]           # (N_fast,)
-            x_transported = ((col / col.sum()).unsqueeze(0) @ Xs)  # (1, hidden_dim)
-            x[:, j]    = (1 - alpha) * x[:, j] + alpha * x_transported.to(x.dtype)
+            dist = ((Xt - x_h) ** 2).sum(dim=1)
+            target_idx = dist.argmin()
+            col = coupling[:, target_idx]  # (N_fast,)
+            x_transported = (col / col.sum()).unsqueeze(0) @ Xs  # (1, hidden_dim)
+            x[:, j] = (1 - alpha) * x[:, j] + alpha * x_transported.to(x.dtype)
 
-
-
-        INTERVENTION_LOG.append({
-            "fm_step": step, "intervened": True, "prob_fast": float(prob_fast), "reason": "steered",})
+        INTERVENTION_LOG.append(
+            {
+                "fm_step": step,
+                "intervened": True,
+                "prob_fast": float(prob_fast),
+                "reason": "steered",
+            }
+        )
 
     if update_fm_step:
         FLOW_MATCHING_STATE["STEP"] += 1
 
     return x
-
-
-
 
 
 def shift_hidden_states(
@@ -505,6 +578,7 @@ def shift_hidden_states(
     """
 
     if operation == "regressor_vlm_clf":
+
         def hook(module, input, output):
             if isinstance(output, tuple):
                 output_ = apply_steering_regression_vlm_with_classifier(
@@ -519,6 +593,7 @@ def shift_hidden_states(
                 )
 
     elif operation == "mean_vlm_clf":
+
         def hook(module, input, output):
             if isinstance(output, tuple):
                 output_ = apply_steering_diff_means_vlm_with_classifier(
@@ -535,6 +610,7 @@ def shift_hidden_states(
                 )
 
     elif operation == "regressor_fm_clf":
+
         def hook(module, input, output):
             if isinstance(output, tuple):
                 output_ = apply_steering_regression_flow_matching_with_classifier(
@@ -552,6 +628,7 @@ def shift_hidden_states(
 
     elif "ot_steering_decision_func_high_to_low" in operation:
         if "pi05" in operation:
+
             def hook(module, input, output):
                 if isinstance(output, tuple):
                     output_ = apply_steering_ot_flow_matching_with_classifier_high_to_low_pi05(
@@ -569,13 +646,16 @@ def shift_hidden_states(
                         update_fm_step=update_fm_step,
                     )
         else:
+
             def hook(module, input, output):
                 if isinstance(output, tuple):
-                    output_ = apply_steering_ot_flow_matching_with_classifier_high_to_low(
-                        output[0],
-                        vector,
-                        alpha=alpha,
-                        update_fm_step=update_fm_step,
+                    output_ = (
+                        apply_steering_ot_flow_matching_with_classifier_high_to_low(
+                            output[0],
+                            vector,
+                            alpha=alpha,
+                            update_fm_step=update_fm_step,
+                        )
                     )
                     return (output_,) + output[1:]
                 else:
@@ -588,6 +668,7 @@ def shift_hidden_states(
 
     elif "ot_steering_decision_func_low_to_high" in operation:
         if "pi05" in operation:
+
             def hook(module, input, output):
                 if isinstance(output, tuple):
                     output_ = apply_steering_ot_flow_matching_with_classifier_low_to_high_pi05(
@@ -605,13 +686,16 @@ def shift_hidden_states(
                         update_fm_step=update_fm_step,
                     )
         else:
+
             def hook(module, input, output):
                 if isinstance(output, tuple):
-                    output_ = apply_steering_ot_flow_matching_with_classifier_low_to_high(
-                        output[0],
-                        vector,
-                        alpha=alpha,
-                        update_fm_step=update_fm_step,
+                    output_ = (
+                        apply_steering_ot_flow_matching_with_classifier_low_to_high(
+                            output[0],
+                            vector,
+                            alpha=alpha,
+                            update_fm_step=update_fm_step,
+                        )
                     )
                     return (output_,) + output[1:]
                 else:
@@ -638,7 +722,6 @@ def extract_token_of_interest_states(
     token_of_interest_idx: Union[int, torch.Tensor] = None,
     token_of_interest_start_token: int = 0,
 ) -> Tuple[torch.Tensor]:
-
     if token_of_interest_start_token != 0:
         # e.g. consider only te answers
         tokens = tokens[:, token_of_interest_start_token:]
@@ -760,9 +843,9 @@ def get_hidden_states(
     output = {}
     for k, v in HIDDEN_STATES.items():
         if isinstance(v, list) and len(v) > 1:
-            #v = torch.cat(v, dim=1) # Old code changed by JAYNEEL
+            # v = torch.cat(v, dim=1) # Old code changed by JAYNEEL
             v = torch.cat(v, dim=0)
-            #print ("Found a LIST", v.shape)
+            # print ("Found a LIST", v.shape)
         else:
             v = v[0]
         if token_idx is not None:
@@ -770,7 +853,6 @@ def get_hidden_states(
         elif token_start_end_idx is not None:
             v = v[:, int(token_start_end_idx[0]) : int(token_start_end_idx[1]), :]
         elif extract_token_of_interest:
-
             if save_only_generated_tokens:
                 start_idx_generated_tokens = -kwargs["model_generated_output"].shape[1]
                 token_of_interest_start_token = start_idx_generated_tokens
@@ -784,7 +866,6 @@ def get_hidden_states(
             output["token_of_interest_mask"] = token_of_interest_mask
             output["image"] = kwargs["image"]
         elif extract_before_special_tokens:
-
             if save_only_generated_tokens:
                 start_idx_generated_tokens = -kwargs["model_generated_output"].shape[1]
                 token_of_interest_start_token = start_idx_generated_tokens
@@ -863,14 +944,16 @@ def register_hooks(
     hook_function, hook_return_function = None, None
 
     # Detect input/output save preference and normalize hook_name for matching
-    if "_input_hidden_states" in hook_name and hook_name != "save_input_hidden_states_mean":
+    if (
+        "_input_hidden_states" in hook_name
+        and hook_name != "save_input_hidden_states_mean"
+    ):
         save_hidden_states = save_hidden_states_input
         hook_name = hook_name.replace("_input_hidden_states", "_hidden_states")
     elif "_output_hidden_states" in hook_name:
         save_hidden_states = save_hidden_states_output
         hook_name = hook_name.replace("_output_hidden_states", "_hidden_states")
     # else: save_hidden_states stays as the original function
-
 
     if "save_hidden_states" == hook_name:
         # Save the hidden states of all tokens in the sequence
@@ -879,7 +962,12 @@ def register_hooks(
     elif "save_hidden_states_given_token_idx" == hook_name:
         # Save the hidden states at given token index
         hook_function = save_hidden_states
-        hook_return_function = partial(get_hidden_states, token_idx=args.token_idx[0] if len(args.token_idx)==1 else args.token_idx[hook_index])
+        hook_return_function = partial(
+            get_hidden_states,
+            token_idx=args.token_idx[0]
+            if len(args.token_idx) == 1
+            else args.token_idx[hook_index],
+        )
     elif "save_hidden_states_given_token_start_end_idx" == hook_name:
         # Save the hidden states of tokens between start and end index
         hook_function = save_hidden_states
@@ -907,40 +995,16 @@ def register_hooks(
                     for tok in tokens_of_interest
                 ]
             )
-            check_token = tokenizer.encode(" " + token_of_interest, add_special_tokens=False)[0]
-            if token_of_interest in tokenizer.decode([check_token]): # Check if this check_token is only encoding whitespace
-                token_of_interest_idx = torch.tensor(list(token_of_interest_idx) + [check_token])
-            
+            check_token = tokenizer.encode(
+                " " + token_of_interest, add_special_tokens=False
+            )[0]
+            if token_of_interest in tokenizer.decode(
+                [check_token]
+            ):  # Check if this check_token is only encoding whitespace
+                token_of_interest_idx = torch.tensor(
+                    list(token_of_interest_idx) + [check_token]
+                )
 
-        hook_function = save_hidden_states
-        hook_return_function = partial(
-            get_hidden_states,
-            extract_token_of_interest=True,
-            token_of_interest_idx=token_of_interest_idx,
-            token_of_interest_start_token=args.token_of_interest_start_token,
-            save_only_generated_tokens=args.save_only_generated_tokens,
-        )
-    elif "save_hidden_states_for_token_of_interest_class" == hook_name:
-        # Save the hidden states of tokens between start and end index
-        token_of_interest = []
-        tokens = list(WORDS[args.token_of_interest_class])
-        for tok in tqdm(tokens):
-            toks = [
-                tok,
-                tok.capitalize(),
-                tok.lower(),
-            ]
-            token_of_interest.extend(toks)
-        tokens_of_interest = list(set(token_of_interest))
-
-        token_of_interest_idx = args.token_of_interest_idx
-        if token_of_interest_idx is None:
-            token_of_interest_idx = torch.tensor(
-                [
-                    tokenizer.encode(tok, add_special_tokens=False)[0]
-                    for tok in tokens_of_interest
-                ]
-            )
         hook_function = save_hidden_states
         hook_return_function = partial(
             get_hidden_states,
@@ -979,16 +1043,20 @@ def register_hooks(
                 f"*regressor*vlm*clf*, *mean*vlm*clf*, *regressor*fm*clf*, "
                 f"*dimas*high_to_low*, *dimas*low_to_high*"
             )
-        
+
         if "pi05" in hook_name:
             operation += "_pi05"
 
         only_generated_tokens = "only_generated" in hook_name
         include_last_prompt_token = "last_prompt_token" in hook_name
 
-        shift_vector_path = args.shift_vector_path[0] if len(args.shift_vector_path)==1 else args.shift_vector_path[hook_index]
+        shift_vector_path = (
+            args.shift_vector_path[0]
+            if len(args.shift_vector_path) == 1
+            else args.shift_vector_path[hook_index]
+        )
         logger.info(f"Loading steering vector from: {shift_vector_path}")
-        vector = torch.load(shift_vector_path , weights_only=False)
+        vector = torch.load(shift_vector_path, weights_only=False)
 
         hook_function = partial(
             shift_hidden_states,
@@ -1000,7 +1068,12 @@ def register_hooks(
             start_prompt_token_idx=args.start_prompt_token_idx_steering,
             update_fm_step=True,
         )
-        hook_return_function = partial(get_hidden_states, token_idx=args.token_idx[0] if len(args.token_idx)==1 else args.token_idx[hook_index])
+        hook_return_function = partial(
+            get_hidden_states,
+            token_idx=args.token_idx[0]
+            if len(args.token_idx) == 1
+            else args.token_idx[hook_index],
+        )
     else:
         warnings.warn(f"{hook_name} is not supported. No hooks attached to model.")
     if hook_function is not None:
@@ -1022,7 +1095,6 @@ def hooks_postprocessing(
 ) -> Callable:
     hook_postprocessing_function = None
     if "save_hidden_states" in hook_name:
-
         data_keys = ["hidden_states", "image", "model_predictions"]
 
         if "token_of_interest" in hook_name:
@@ -1084,5 +1156,3 @@ def setup_hooks(
         hook_postprocessing_functions.append(hook_postprocessing_function)
 
     return hook_return_functions, hook_postprocessing_functions
-
-

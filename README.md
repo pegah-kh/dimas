@@ -2,7 +2,7 @@
 
 ## Abstract
 
-Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: fine-grained behavioral control, the ability to govern how a robot performs a task by intervening on its internal representations. Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in VLAs. We propose *DiMaS*, a *Di*stribution *Ma*tching *S*teerubf strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs. 
+Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: fine-grained behavioral control, the ability to govern how a robot performs a task by intervening on its internal representations. Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in VLAs. We propose *DiMaS*, a *Di*stribution *Ma*tching *S*teerubf strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs.
 
 
 <br> <br>
@@ -129,7 +129,7 @@ Pass the checkpoint via `--policy.path=<hub-id-or-local-path>` to
 ## Main Experiments
 
 The scripts that produced the full sweep of results in the paper are not
-part of this public release. To reproduce the *method* end to end 
+part of this public release. To reproduce the *method* end to end
 extraction, steering-vector training, and steered inference see the
 [Examples](#examples) section below, which walks through the same pipeline
 on a smaller scale (`libero_object`, 10 episodes/task) that runs on a single
@@ -178,14 +178,14 @@ Both use the exact same underlying mechanism (mapping between a
 extraction/{SmolVLA,PI_0.5}/{FM,VLM}/extract_baseline.sh
         │
         │  Extracts and saves hidden states representations for
-        │  (VLM = vision-language backbone,FM = flow-matching / action-expert layers) 
-        │  
+        │  (VLM = vision-language backbone,FM = flow-matching / action-expert layers)
+        │
         ▼
 steering/{speed,z-displacement}/{SmolVLA,PI_0.5}/01_train_steering_vector.sh
         │
         │  reads the saved representations, and trains DiMas map between the two designed groups
-        │   
-        │ 
+        │
+        │
         ▼
 steering/{speed,z-displacement}/{SmolVLA,PI_0.5}/02_apply_steering.sh
         │
@@ -212,9 +212,13 @@ If you use this code, please cite:
 
 ```bibtex
 @misc{dimas2026,
-  title  = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
-  author = {TODO: author list},
-  year   = {2026},
-  note   = {TODO: venue / arXiv id once available},
+  title         = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
+  author        = {Khayatan*, Pegah and Meziane*, Sara and Parekh*, Jayneel and Cord, Matthieu},
+  year          = {2026},
+  eprint        = {2607.14280},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url           = {https://arxiv.org/abs/2607.14280},
+  note          = {*Equal contribution.},
 }
 ```

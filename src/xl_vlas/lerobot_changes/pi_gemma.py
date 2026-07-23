@@ -145,7 +145,9 @@ def _get_pi_gemma_decoder_layer_base():
             self.self_attn = GemmaAttention(config=config, layer_idx=layer_idx)
             self.mlp = GemmaMLP(config)
             cond_dim = (
-                getattr(config, "adarms_cond_dim", None) if getattr(config, "use_adarms", False) else None
+                getattr(config, "adarms_cond_dim", None)
+                if getattr(config, "use_adarms", False)
+                else None
             )
             self.input_layernorm = PiGemmaRMSNorm(
                 config.hidden_size, eps=config.rms_norm_eps, cond_dim=cond_dim
@@ -183,9 +185,13 @@ def _get_pi_gemma_decoder_layer_base():
             hidden_states = _gated_residual(residual, hidden_states, gate)
 
             residual = hidden_states
-            hidden_states, gate = self.post_attention_layernorm(hidden_states, cond=adarms_cond)
+            hidden_states, gate = self.post_attention_layernorm(
+                hidden_states, cond=adarms_cond
+            )
             hidden_states = self.mlp(hidden_states)
-            hidden_states = self.mlp_gated_residual(_gated_residual(residual, hidden_states, gate))
+            hidden_states = self.mlp_gated_residual(
+                _gated_residual(residual, hidden_states, gate)
+            )
             return hidden_states
 
     return _PiGemmaDecoderLayerBase
@@ -203,9 +209,14 @@ class PiGemmaModel(GemmaModel):  # type: ignore[misc]
         cond_dim = getattr(config, "adarms_cond_dim", None)
         pi_gemma_decoder_layer_base = _get_pi_gemma_decoder_layer_base()
         self.layers = nn.ModuleList(
-            [pi_gemma_decoder_layer_base(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
+            [
+                pi_gemma_decoder_layer_base(config, layer_idx)
+                for layer_idx in range(config.num_hidden_layers)
+            ]
         )
-        self.norm = PiGemmaRMSNorm(config.hidden_size, eps=config.rms_norm_eps, cond_dim=cond_dim)
+        self.norm = PiGemmaRMSNorm(
+            config.hidden_size, eps=config.rms_norm_eps, cond_dim=cond_dim
+        )
 
     def forward(
         self,
@@ -226,15 +237,21 @@ class PiGemmaModel(GemmaModel):  # type: ignore[misc]
             Condition for ADARMS.
         """
         output_attentions = (
-            output_attentions if output_attentions is not None else self.config.output_attentions
+            output_attentions
+            if output_attentions is not None
+            else self.config.output_attentions
         )
         output_hidden_states = (
-            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+            output_hidden_states
+            if output_hidden_states is not None
+            else self.config.output_hidden_states
         )
         use_cache = use_cache if use_cache is not None else self.config.use_cache
 
         if (input_ids is None) ^ (inputs_embeds is not None):
-            raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
+            raise ValueError(
+                "You must specify exactly one of input_ids or inputs_embeds"
+            )
 
         if self.gradient_checkpointing and self.training and use_cache:
             import logging
@@ -251,9 +268,13 @@ class PiGemmaModel(GemmaModel):  # type: ignore[misc]
             past_key_values = DynamicCache()
 
         if cache_position is None:
-            past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
+            past_seen_tokens = (
+                past_key_values.get_seq_length() if past_key_values is not None else 0
+            )
             cache_position = torch.arange(
-                past_seen_tokens, past_seen_tokens + inputs_embeds.shape[1], device=inputs_embeds.device
+                past_seen_tokens,
+                past_seen_tokens + inputs_embeds.shape[1],
+                device=inputs_embeds.device,
             )
 
         if position_ids is None:
@@ -271,7 +292,10 @@ class PiGemmaModel(GemmaModel):  # type: ignore[misc]
         # embed positions
         hidden_states = inputs_embeds
         # Convert to bfloat16 if the first layer uses bfloat16
-        if len(self.layers) > 0 and self.layers[0].self_attn.q_proj.weight.dtype == torch.bfloat16:
+        if (
+            len(self.layers) > 0
+            and self.layers[0].self_attn.q_proj.weight.dtype == torch.bfloat16
+        ):
             hidden_states = hidden_states.to(torch.bfloat16)
 
         # create position embeddings to be shared across the decoder layers

@@ -78,14 +78,14 @@ from xl_vlas.configs.feature_extraction import FeatureExtractionPipelineConfig
 
 
 def robot_state_to_8d_libero(robot_state):
-    pos = robot_state['eef']['pos'][0]        # (3,)
-    quat = robot_state['eef']['quat']      # (4,)
+    pos = robot_state["eef"]["pos"][0]  # (3,)
+    quat = robot_state["eef"]["quat"]  # (4,)
 
     # quaternion → axis-angle
-    axisangle = LiberoProcessorStep._quat2axisangle(None,quat)          # (3,)
+    axisangle = LiberoProcessorStep._quat2axisangle(None, quat)  # (3,)
 
     # keep both finger joints
-    gripper = robot_state['gripper']['qpos'][0]   # (2,)
+    gripper = robot_state["gripper"]["qpos"][0]  # (2,)
 
     state8 = torch.cat([pos, axisangle[0], gripper], dim=0)  # (8,)
     return state8.unsqueeze(0)
@@ -148,7 +148,6 @@ def rollout(
     if render_callback is not None:
         render_callback(env)
 
-
     all_observations = []
     all_actions = []
     all_rewards = []
@@ -184,7 +183,9 @@ def rollout(
         n_intervention_entries_before = len(_utils_internals.INTERVENTION_LOG)
         with torch.inference_mode():
             action = policy.select_action(observation)
-        step_intervention_logs.append(list(_utils_internals.INTERVENTION_LOG[n_intervention_entries_before:]))
+        step_intervention_logs.append(
+            list(_utils_internals.INTERVENTION_LOG[n_intervention_entries_before:])
+        )
         action = postprocessor(action)
 
         action_transition = {ACTION: action}
@@ -195,10 +196,12 @@ def rollout(
         action_numpy: np.ndarray = action.to("cpu").numpy()
         assert action_numpy.ndim == 2, "Action dimensions should be (batch, action_dim)"
 
-
         if action_hook is not None:
+
             class _FakeTransition:
-                def __init__(self, a): self.action = torch.from_numpy(a)
+                def __init__(self, a):
+                    self.action = torch.from_numpy(a)
+
             t = _FakeTransition(action_numpy)
             action_hook(1, t)  # step_idx=1 to pass the only_last_step check
             action_numpy = t.action.numpy()
@@ -249,9 +252,13 @@ def rollout(
 
         step += 1
         running_success_rate = (
-            einops.reduce(torch.stack(all_successes, dim=1), "b n -> b", "any").numpy().mean()
+            einops.reduce(torch.stack(all_successes, dim=1), "b n -> b", "any")
+            .numpy()
+            .mean()
         )
-        progbar.set_postfix({"running_success_rate": f"{running_success_rate.item() * 100:.1f}%"})
+        progbar.set_postfix(
+            {"running_success_rate": f"{running_success_rate.item() * 100:.1f}%"}
+        )
         progbar.update()
 
     # Track the final observation.
@@ -274,11 +281,9 @@ def rollout(
         stacked_observations = {}
 
         for key in all_observations[0]:
-
             if key == "observation.robot_state":
                 states = [
-                    robot_state_to_8d_libero(obs[key])
-                    for obs in all_observations
+                    robot_state_to_8d_libero(obs[key]) for obs in all_observations
                 ]
                 stacked_observations[key] = torch.stack(states, dim=1)
 
@@ -288,7 +293,6 @@ def rollout(
                 )
 
         ret[OBS_STR] = stacked_observations
-
 
     if hasattr(policy, "use_original_modules"):
         policy.use_original_modules()
@@ -340,7 +344,7 @@ def eval_policy(
                 raise exc
         except ImportError:
             raise exc from None
-        
+
     start = time.time()
     policy.eval()
 
@@ -364,7 +368,9 @@ def eval_policy(
             return
         n_to_render_now = min(max_episodes_rendered - n_episodes_rendered, env.num_envs)
         if isinstance(env, gym.vector.SyncVectorEnv):
-            ep_frames.append(np.stack([env.envs[i].render() for i in range(n_to_render_now)]))  # noqa: B023
+            ep_frames.append(
+                np.stack([env.envs[i].render() for i in range(n_to_render_now)])
+            )  # noqa: B023
         elif isinstance(env, gym.vector.AsyncVectorEnv):
             # Here we must render all frames and discard any we don't need.
             ep_frames.append(np.stack(env.call("render")[:n_to_render_now]))
@@ -376,7 +382,9 @@ def eval_policy(
         episode_data: dict | None = None
 
     # we dont want progress bar when we use slurm, since it clutters the logs
-    progbar = trange(n_batches, desc="Stepping through eval batches", disable=inside_slurm())
+    progbar = trange(
+        n_batches, desc="Stepping through eval batches", disable=inside_slurm()
+    )
     for batch_ix in progbar:
         # Cache frames for rendering videos. Each item will be (b, h, w, c), and the list indexes the rollout
         # step.
@@ -387,7 +395,8 @@ def eval_policy(
             seeds = None
         else:
             seeds = range(
-                start_seed + (batch_ix * env.num_envs), start_seed + ((batch_ix + 1) * env.num_envs)
+                start_seed + (batch_ix * env.num_envs),
+                start_seed + ((batch_ix + 1) * env.num_envs),
             )
         rollout_data = rollout(
             env=env,
@@ -414,13 +423,22 @@ def eval_policy(
 
         # Make a mask with shape (batch, n_steps) to mask out rollout data after the first done
         # (batch-element-wise). Note the `done_indices + 1` to make sure to keep the data from the done step.
-        mask = (torch.arange(n_steps) <= einops.repeat(done_indices + 1, "b -> b s", s=n_steps)).int()
+        mask = (
+            torch.arange(n_steps)
+            <= einops.repeat(done_indices + 1, "b -> b s", s=n_steps)
+        ).int()
         # Extend metrics.
-        batch_sum_rewards = einops.reduce((rollout_data["reward"] * mask), "b n -> b", "sum")
+        batch_sum_rewards = einops.reduce(
+            (rollout_data["reward"] * mask), "b n -> b", "sum"
+        )
         sum_rewards.extend(batch_sum_rewards.tolist())
-        batch_max_rewards = einops.reduce((rollout_data["reward"] * mask), "b n -> b", "max")
+        batch_max_rewards = einops.reduce(
+            (rollout_data["reward"] * mask), "b n -> b", "max"
+        )
         max_rewards.extend(batch_max_rewards.tolist())
-        batch_successes = einops.reduce((rollout_data["success"] * mask), "b n -> b", "any")
+        batch_successes = einops.reduce(
+            (rollout_data["success"] * mask), "b n -> b", "any"
+        )
         all_successes.extend(batch_successes.tolist())
         if seeds:
             all_seeds.extend(seeds)
@@ -433,22 +451,31 @@ def eval_policy(
                 rollout_data,
                 done_indices,
                 start_episode_index=batch_ix * env.num_envs,
-                start_data_index=(0 if episode_data is None else (episode_data["index"][-1].item() + 1)),
+                start_data_index=(
+                    0
+                    if episode_data is None
+                    else (episode_data["index"][-1].item() + 1)
+                ),
                 fps=env.unwrapped.metadata["render_fps"],
             )
             if episode_data is None:
                 episode_data = this_episode_data
-                if 'hook_data' in episode_data:
-                    episode_data['hook_data'] = [episode_data['hook_data']]
+                if "hook_data" in episode_data:
+                    episode_data["hook_data"] = [episode_data["hook_data"]]
             else:
-                assert episode_data["episode_index"][-1] + 1 == this_episode_data["episode_index"][0]
+                assert (
+                    episode_data["episode_index"][-1] + 1
+                    == this_episode_data["episode_index"][0]
+                )
                 assert episode_data["index"][-1] + 1 == this_episode_data["index"][0]
                 new_episode_data = {}
                 for k in episode_data:
-                    if k == 'hook_data':
+                    if k == "hook_data":
                         new_episode_data[k] = episode_data[k] + [this_episode_data[k]]
                     else:
-                        new_episode_data[k] = torch.cat([episode_data[k], this_episode_data[k]])
+                        new_episode_data[k] = torch.cat(
+                            [episode_data[k], this_episode_data[k]]
+                        )
                 episode_data = new_episode_data
 
         # Maybe render video for visualization.
@@ -467,7 +494,9 @@ def eval_policy(
                     target=write_video,
                     args=(
                         str(video_path),
-                        stacked_frames[: done_index + 1],  # + 1 to capture the last observation
+                        stacked_frames[
+                            : done_index + 1
+                        ],  # + 1 to capture the last observation
                         env.unwrapped.metadata["render_fps"],
                     ),
                 )
@@ -476,7 +505,9 @@ def eval_policy(
                 n_episodes_rendered += 1
 
         progbar.set_postfix(
-            {"running_success_rate": f"{np.mean(all_successes[:n_episodes]).item() * 100:.1f}%"}
+            {
+                "running_success_rate": f"{np.mean(all_successes[:n_episodes]).item() * 100:.1f}%"
+            }
         )
 
     # Wait till all video rendering threads are done.
@@ -515,29 +546,54 @@ def eval_policy(
     if return_episode_data:
         info["episodes"] = episode_data
         all_keys = episode_data.keys()
-        my_keys = ['action', 'episode_index', 'frame_index', 'timestamp', 'next.done', 'next.success', 'next.reward', 'observation.state', 'index', 'hook_data',*[k for k in episode_data.keys() if k.startswith('observation.') and 'image' not in k]]
+        my_keys = [
+            "action",
+            "episode_index",
+            "frame_index",
+            "timestamp",
+            "next.done",
+            "next.success",
+            "next.reward",
+            "observation.state",
+            "index",
+            "hook_data",
+            *[
+                k
+                for k in episode_data.keys()
+                if k.startswith("observation.") and "image" not in k
+            ],
+        ]
         my_info = {}
         for key in my_keys:
             if key in all_keys:
                 my_info[key] = episode_data[key]
-        save_path = str(videos_dir / f"episode_output_data.pt")
+        save_path = str(videos_dir / "episode_output_data.pt")
         torch.save(my_info, save_path)
-        
+
     if max_episodes_rendered > 0:
         info["video_paths"] = video_paths
 
     if videos_dir is not None:
         videos_dir.mkdir(parents=True, exist_ok=True)
         with open(videos_dir / "step_intervention_logs.json", "w") as f:
-            json.dump({
-                "per_episode_step_intervention_logs": all_step_intervention_logs[:n_episodes],
-            }, f)
+            json.dump(
+                {
+                    "per_episode_step_intervention_logs": all_step_intervention_logs[
+                        :n_episodes
+                    ],
+                },
+                f,
+            )
 
     return info
 
 
 def _compile_episode_data(
-    rollout_data: dict, done_indices: Tensor, start_episode_index: int, start_data_index: int, fps: float
+    rollout_data: dict,
+    done_indices: Tensor,
+    start_episode_index: int,
+    start_data_index: int,
+    fps: float,
 ) -> dict:
     """Convenience function for `eval_policy(return_episode_data=True)`
 
@@ -555,7 +611,9 @@ def _compile_episode_data(
         # Here we do `num_frames - 1` as we don't want to include the last observation frame just yet.
         ep_dict = {
             ACTION: rollout_data[ACTION][ep_ix, : num_frames - 1],
-            "episode_index": torch.tensor([start_episode_index + ep_ix] * (num_frames - 1)),
+            "episode_index": torch.tensor(
+                [start_episode_index + ep_ix] * (num_frames - 1)
+            ),
             "frame_index": torch.arange(0, num_frames - 1, 1),
             "timestamp": torch.arange(0, num_frames - 1, 1) / fps,
             DONE: rollout_data["done"][ep_ix, : num_frames - 1],
@@ -567,8 +625,6 @@ def _compile_episode_data(
         for k in ep_dict:
             ep_dict[k] = torch.cat([ep_dict[k], ep_dict[k][-1:]])
 
-
-
         for key in rollout_data[OBS_STR]:
             ep_dict[key] = rollout_data[OBS_STR][key][ep_ix, :num_frames]
 
@@ -578,9 +634,11 @@ def _compile_episode_data(
     for key in ep_dicts[0]:
         data_dict[key] = torch.cat([x[key] for x in ep_dicts])
 
-    data_dict["index"] = torch.arange(start_data_index, start_data_index + total_frames, 1)
+    data_dict["index"] = torch.arange(
+        start_data_index, start_data_index + total_frames, 1
+    )
 
-    data_dict['hook_data'] = rollout_data['hook_data']
+    data_dict["hook_data"] = rollout_data["hook_data"]
 
     return data_dict
 
@@ -588,7 +646,6 @@ def _compile_episode_data(
 @parser.wrap()
 def eval_main(cfg: FeatureExtractionPipelineConfig):
     logging.info(pformat(asdict(cfg)))
-
 
     action_hook = None
     if cfg.after_env_post_hooks is not None:
@@ -602,25 +659,34 @@ def eval_main(cfg: FeatureExtractionPipelineConfig):
 
         HOOK_FACTORY = {
             "magnify_xyz": lambda: make_magnification_hook(
-                dims=cfg.action_hook_dims, scale=cfg.action_hook_scale),
+                dims=cfg.action_hook_dims, scale=cfg.action_hook_scale
+            ),
             "magnify_adaptive": lambda: make_adaptive_magnification_hook(
-                dims=cfg.action_hook_dims, scale=cfg.action_hook_scale,
-                threshold=cfg.action_hook_threshold, scale_below=cfg.action_hook_scale_below),
+                dims=cfg.action_hook_dims,
+                scale=cfg.action_hook_scale,
+                threshold=cfg.action_hook_threshold,
+                scale_below=cfg.action_hook_scale_below,
+            ),
             "magnify_deadzone": lambda: make_deadzone_magnification_hook(
-                dims=cfg.action_hook_dims, scale=cfg.action_hook_scale,
-                deadzone=cfg.action_hook_deadzone),
+                dims=cfg.action_hook_dims,
+                scale=cfg.action_hook_scale,
+                deadzone=cfg.action_hook_deadzone,
+            ),
             "magnify_signed": lambda: make_signed_magnification_hook(
-                dims=cfg.action_hook_dims, scale_pos=cfg.action_hook_scale_pos,
-                scale_neg=cfg.action_hook_scale_neg),
+                dims=cfg.action_hook_dims,
+                scale_pos=cfg.action_hook_scale_pos,
+                scale_neg=cfg.action_hook_scale_neg,
+            ),
             "magnify_gripper_gated": lambda: make_gripper_gated_magnification_hook(
-                dims=cfg.action_hook_dims, scale=cfg.action_hook_scale,
+                dims=cfg.action_hook_dims,
+                scale=cfg.action_hook_scale,
                 gripper_dim=cfg.action_hook_gripper_dim,
-                gripper_closed_threshold=cfg.action_hook_gripper_threshold),
+                gripper_closed_threshold=cfg.action_hook_gripper_threshold,
+            ),
         }
 
         action_hook = HOOK_FACTORY[cfg.after_env_post_hooks]()
 
-     
     # Check device is available
     device = get_safe_torch_device(cfg.policy.device, log=True)
 
@@ -628,7 +694,9 @@ def eval_main(cfg: FeatureExtractionPipelineConfig):
     torch.backends.cuda.matmul.allow_tf32 = True
     set_seed(cfg.seed)
 
-    logging.info(colored("Output dir:", "yellow", attrs=["bold"]) + f" {cfg.output_dir}")
+    logging.info(
+        colored("Output dir:", "yellow", attrs=["bold"]) + f" {cfg.output_dir}"
+    )
 
     logging.info("Making environment.")
     envs = make_env(
@@ -671,11 +739,18 @@ def eval_main(cfg: FeatureExtractionPipelineConfig):
     )
 
     # Create environment-specific preprocessor and postprocessor (e.g., for LIBERO environments)
-    env_preprocessor, env_postprocessor = make_env_pre_post_processors(env_cfg=cfg.env, policy_cfg=cfg.policy)
+    env_preprocessor, env_postprocessor = make_env_pre_post_processors(
+        env_cfg=cfg.env, policy_cfg=cfg.policy
+    )
 
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
 
-    with torch.no_grad(), torch.autocast(device_type=device.type) if cfg.policy.use_amp else nullcontext():
+    with (
+        torch.no_grad(),
+        torch.autocast(device_type=device.type)
+        if cfg.policy.use_amp
+        else nullcontext(),
+    ):
         info = eval_policy_all(
             envs=envs,
             policy=policy,
@@ -801,16 +876,22 @@ def run_one(
     if task_videos_dir is not None:
         checkpoint = task_videos_dir / "episode_output_data.pt"
         if checkpoint.exists():
-            logging.info(f"[skip] {task_group} task {task_id}: found existing data, skipping eval.")
+            logging.info(
+                f"[skip] {task_group} task {task_id}: found existing data, skipping eval."
+            )
             saved = torch.load(checkpoint, map_location="cpu", weights_only=False)
             ep_idx = saved["episode_index"]
             rewards = saved["next.reward"].float()
             succs = saved["next.success"].float()
-            unique_eps = ep_idx.unique().tolist()[:n_episodes]  # cap to n_episodes for consistency
+            unique_eps = ep_idx.unique().tolist()[
+                :n_episodes
+            ]  # cap to n_episodes for consistency
             metrics = {
                 "sum_rewards": [rewards[ep_idx == e].sum().item() for e in unique_eps],
                 "max_rewards": [rewards[ep_idx == e].max().item() for e in unique_eps],
-                "successes": [bool(succs[ep_idx == e].any().item()) for e in unique_eps],
+                "successes": [
+                    bool(succs[ep_idx == e].any().item()) for e in unique_eps
+                ],
                 "video_paths": [],
             }
             return task_group, task_id, metrics
@@ -869,7 +950,9 @@ def eval_policy_all(
     tasks = [(tg, tid, vec) for tg, group in envs.items() for tid, vec in group.items()]
 
     # accumulators: track metrics at both per-group level and across all groups
-    group_acc: dict[str, dict[str, list]] = defaultdict(lambda: {k: [] for k in ACC_KEYS})
+    group_acc: dict[str, dict[str, list]] = defaultdict(
+        lambda: {k: [] for k in ACC_KEYS}
+    )
     overall: dict[str, list] = {k: [] for k in ACC_KEYS}
     per_task_infos: list[dict] = []
 
@@ -921,7 +1004,9 @@ def eval_policy_all(
         for task_group, task_id, env in tasks:
             tg, tid, metrics = task_runner(task_group, task_id, env)
             _accumulate_to(tg, metrics)
-            per_task_infos.append({"task_group": tg, "task_id": tid, "metrics": metrics})
+            per_task_infos.append(
+                {"task_group": tg, "task_id": tid, "metrics": metrics}
+            )
     else:
         # threaded path: submit all tasks, consume completions on main thread and accumulate there
         with cf.ThreadPoolExecutor(max_workers=max_parallel_tasks) as executor:
@@ -932,7 +1017,9 @@ def eval_policy_all(
             for fut in cf.as_completed(fut2meta):
                 tg, tid, metrics = fut.result()
                 _accumulate_to(tg, metrics)
-                per_task_infos.append({"task_group": tg, "task_id": tid, "metrics": metrics})
+                per_task_infos.append(
+                    {"task_group": tg, "task_id": tid, "metrics": metrics}
+                )
 
     # compute aggregated metrics helper (robust to lists/scalars)
     def _agg_from_list(xs):
@@ -947,7 +1034,9 @@ def eval_policy_all(
         groups_aggregated[group] = {
             "avg_sum_reward": _agg_from_list(acc["sum_rewards"]),
             "avg_max_reward": _agg_from_list(acc["max_rewards"]),
-            "pc_success": _agg_from_list(acc["successes"]) * 100 if acc["successes"] else float("nan"),
+            "pc_success": _agg_from_list(acc["successes"]) * 100
+            if acc["successes"]
+            else float("nan"),
             "n_episodes": len(acc["sum_rewards"]),
             "video_paths": list(acc["video_paths"]),
         }
@@ -956,7 +1045,9 @@ def eval_policy_all(
     overall_agg = {
         "avg_sum_reward": _agg_from_list(overall["sum_rewards"]),
         "avg_max_reward": _agg_from_list(overall["max_rewards"]),
-        "pc_success": _agg_from_list(overall["successes"]) * 100 if overall["successes"] else float("nan"),
+        "pc_success": _agg_from_list(overall["successes"]) * 100
+        if overall["successes"]
+        else float("nan"),
         "n_episodes": len(overall["sum_rewards"]),
         "eval_s": time.time() - start_t,
         "eval_ep_s": (time.time() - start_t) / max(1, len(overall["sum_rewards"])),
