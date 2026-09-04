@@ -28,7 +28,7 @@
         font-size:21px;
         margin:10px auto;
         width:auto;
-        max-width:950px;
+        max-width:1050px;
         line-height: 1.5;
       }
 
@@ -124,7 +124,7 @@
             <div class="publication-links">
               <!-- TODO: replace with the real arXiv/PDF link once available -->
               <span class="link-block">
-                <a href="#"
+                <a href="https://arxiv.org/pdf/2607.14280"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="ai ai-arxiv"></i>
@@ -156,7 +156,7 @@
       <div class="column is-four-fifths">
         <h2 class="title is-3" style="margin-top: -45px;">Abstract</h2>
         <div class="content has-text-justified">
-          <p style="line-height: 1.4;" >
+          <p style="line-height: 1.5;" >
             Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: fine-grained behavioral control, the ability to govern how a robot performs a task by intervening on its internal representations. Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in flow-matching based VLAs. We propose DiMaS, a Distribution Matching Steering strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs.
           </p>
         </div>
@@ -169,10 +169,12 @@
   <div class="container is-max-desktop">
     <div class="hero-body">
       <h2 class="title is-3 has-text-centered">Method overview</h2>
-      <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline">
-      <h2 class="subtitle has-text-centered">
-        <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
-      </h2>
+      <center>
+        <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline" style="max-width:850px;">
+        <h2 class="subtitle has-text-centered" style="max-width:850px;">
+          <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
+        </h2>
+      </center>
 
       <div class="content has-text-justified method-description">
         <p>
@@ -196,7 +198,7 @@
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">Key conclusions</h2>
+        <h2 class="title is-3">Key takeaways</h2>
         <div class="content has-text-justified">
           <ul>
             <li>Hidden representations in the action expert layers are linearly separable but not linearly steerable.</li>
@@ -261,7 +263,7 @@
   title  = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
   author = {Khayatan, Pegah and Meziane, Sara and Parekh, Jayneel and Cord, Matthieu},
   year   = {2026},
-  note   = {TODO: venue / arXiv id once available},
+  note   = {ECCVW 2026 / https://arxiv.org/abs/2607.14280},
 }</code></pre>
   </div>
 </section>
