@@ -189,11 +189,11 @@
           <p style="line-height: 1.5;" >
             <b>Our contributions</b>: We make key advancements along three axes
             <ul>
-              <li> <i>Steering with task success</i>: For any current/future steering method for VLAs, we believe they will be primarily judged upon how effectively they can control robot style without losing on the task success rate. Even though our method is far from perfect, it takes some crucial steps forward towards achieving this goal.</li>
+              <li> <i>Steering with task success</i>: The holy grail for VLA steering we believe is about how effectively a steering method can control robot style without losing on the task success rate. Even though our method is far from perfect, it takes some crucial steps forward towards achieving this goal.</li>
               <div class="gap-5"></div>
               <li> <i>Generalizability evaluation</i>: Evaluation in VLA papers often suffer from poor generalization evaluation. In contrast, we perform a structured evaluation for how well our steering method generalizes under various splits of training/testing tasks.</li>
               <div class="gap-5"></div>
-              <li> <i>VLA Representation strucutre insights</i>: Steering in LLMs/VLMs is popularly performed by shifting in a single direction in the latent space. While the evidence against representation of a feature as a linear direction is mounting, prior VLA steering methods still followed this paradigm. We qualitatively show that it isn't really the case for common VLA architectures (despite high linear separability!) and consequently propose an optimal-transport based method</li>
+              <li> <i>VLA Representation strucutre insights</i>: Steering in LLMs/VLMs is popularly performed by shifting in a single direction in the latent space. While the evidence against representation of a feature as a linear direction is mounting, prior VLA steering methods still followed this paradigm. We qualitatively show that it isn't really the case for common VLA architectures (despite high linear separability!) and consequently propose an optimal-transport based method.</li>
             </ul>
           </p>
         </div>
@@ -213,21 +213,31 @@
         </h2>
       </center>
 
+      <div class="gap-20"></div>
+
+      <div class="columns is-centered has-text-centered">
       <div class="content has-text-justified">
 
-      <div style="line-height: 1.5;">
+      <div style="line-height: 1.5; max-width:800px;">
         <p>
-          We first extract representations from a chosen layer of the flow-matching action expert,
-          across a number of tasks and episodes. We then learn a classifier that separates two
-          user-defined behavior classes (e.g. high vs. low speed), and use a distribution matching
-          algorithm to learn a correspondence between the two representation distributions.
-        </p>
-        <p>
-          At inference time, we check whether the current representation already lies in the desired
-          distribution. If not, we transport it using the map learned offline. Rather than applying
+          DiMaS details can be summarized as the following steps:
+          <ul>
+              <li> <b>Representation and feature sourcing</b>: We first extract representations from a chosen layer of the flow-matching action expert (not the VLM!),
+          across a number of tasks and episodes. Each representation is paired with a target scalar feature that denotes the behavioral property we wish to control.</li>
+              <div class="gap-5"></div>
+              <li> <b>Source/target distribution construction</b>: The complete set of extracted representations are partitioned into a source and target distribution based on the feature value. In the DiMaS illustration, this corresponds to the red/green distributions.</li>
+              <div class="gap-5"></div>
+              <li> <b>Learning the steering as transport map</b>: The underlying foundation of our steering intervention relies on a distribution matching algorithm to learn a correspondence between the two representation source/target distributions. 
+          The main reason we opted for such a design was to ensure our steering operation could indeed move from one distribution to the other. Even though we observed a high linear separability in the action expert representations (specially in the deeper layers, later flow-matching steps), single fixed direction in the latent space was not a "good" representation of the underlying feature. 
+          Intuitively, even though the red/green points in the DiMaS illustration above are linearly separable, moving the red points by a constant shift in any direction cannot match them completely to the green points (because the underlying geometries are different). Further details about this qualitative study can be found in the paper. 
+        </li>
+              <li> <b>Test-time intervention strategy</b>: At inference time, we check whether the current representation already lies in the desired
+          distribution (via a learned classifier between source/target distributions). If not, we transport it using the map learned offline. Rather than applying
           the full transport, we interpolate between the original layer output and the transported
-          representation, giving smooth, controllable steering strength.
+          representation, giving smooth, controllable steering strength. This interpolation is essential to ensure we are able to control the feature of interest without significantly dropping the task success rate.</li>
+            </ul>
         </p>
+      </div>
       </div>
       </div>
     </div>
