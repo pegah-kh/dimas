@@ -21,6 +21,54 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/index.js"></script>
+  <link href="./static/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+      body {
+        font-size:21px;
+        margin:10px auto;
+        width:auto;
+        max-width:950px;
+        line-height: 1.5;
+      }
+
+      .gap-30 {
+      width:100%;
+      height:30px;
+      }
+
+      .gap-20 {
+      width:100%;
+      height:20px;
+      }
+
+      .gap-10 {
+      width:100%;
+      height:10px;
+      }
+
+      .gap-reduce{
+        height:-100px;
+      }
+
+      .gap-5 {
+      width:100%;
+      height:5px;
+      }
+      .paper {
+        max-width: 700px;
+      }
+      @media (max-width: 910px) {
+        .paper {
+          max-width: 500px;
+        }
+      }
+      @media (max-width: 610px) {
+        .paper {
+          max-width: 300px;
+        }
+      }
+    </style>
 </head>
 <body>
 
@@ -86,7 +134,7 @@
               </span>
               <!-- TODO: replace with the public GitHub repo URL -->
               <span class="link-block">
-                <a href="#"
+                <a href="https://github.com/pegah-kh/dimas"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fab fa-github"></i>
@@ -102,14 +150,13 @@
   </div>
 </section>
 
-
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered has-text-centered">
       <div class="column is-four-fifths">
-        <h2 class="title is-3">Abstract</h2>
+        <h2 class="title is-3" style="margin-top: -45px;">Abstract</h2>
         <div class="content has-text-justified">
-          <p>
+          <p style="line-height: 1.4;" >
             Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: fine-grained behavioral control, the ability to govern how a robot performs a task by intervening on its internal representations. Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in flow-matching based VLAs. We propose DiMaS, a Distribution Matching Steering strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs.
           </p>
         </div>
