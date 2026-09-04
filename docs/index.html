@@ -21,6 +21,54 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script defer src="./static/js/fontawesome.all.min.js"></script>
   <script src="./static/js/index.js"></script>
+  <link href="./static/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+      body {
+        font-size:20px;
+        margin:10px auto;
+        width:auto;
+        max-width:860px;
+        line-height: 1.5;
+      }
+
+      .gap-30 {
+      width:100%;
+      height:30px;
+      }
+
+      .gap-20 {
+      width:100%;
+      height:20px;
+      }
+
+      .gap-10 {
+      width:100%;
+      height:10px;
+      }
+
+      .gap-reduce{
+        height:-100px;
+      }
+
+      .gap-5 {
+      width:100%;
+      height:5px;
+      }
+      .paper {
+        max-width: 700px;
+      }
+      @media (max-width: 910px) {
+        .paper {
+          max-width: 500px;
+        }
+      }
+      @media (max-width: 610px) {
+        .paper {
+          max-width: 300px;
+        }
+      }
+    </style>
 </head>
 <body>
 
@@ -76,7 +124,7 @@
             <div class="publication-links">
               <!-- TODO: replace with the real arXiv/PDF link once available -->
               <span class="link-block">
-                <a href="#"
+                <a href="https://arxiv.org/pdf/2607.14280"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="ai ai-arxiv"></i>
@@ -86,7 +134,7 @@
               </span>
               <!-- TODO: replace with the public GitHub repo URL -->
               <span class="link-block">
-                <a href="#"
+                <a href="https://github.com/pegah-kh/dimas"
                    class="external-link button is-normal is-rounded is-dark">
                   <span class="icon">
                       <i class="fab fa-github"></i>
@@ -102,14 +150,13 @@
   </div>
 </section>
 
-
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
-        <h2 class="title is-3">Abstract</h2>
+      <div class="column is-full-width">
+        <h2 class="title is-3" style="margin-top: -45px;">Abstract</h2>
         <div class="content has-text-justified">
-          <p>
+          <p style="line-height: 1.5;" >
             Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: fine-grained behavioral control, the ability to govern how a robot performs a task by intervening on its internal representations. Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in flow-matching based VLAs. We propose DiMaS, a Distribution Matching Steering strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs.
           </p>
         </div>
@@ -118,38 +165,91 @@
   </div>
 </section>
 
-<section class="hero teaser">
-  <div class="container is-max-desktop">
-    <div class="hero-body">
-      <h2 class="title is-3 has-text-centered">Method overview</h2>
-      <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline">
-      <h2 class="subtitle has-text-centered">
-        <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
-      </h2>
 
-      <div class="content has-text-justified method-description">
-        <p>
-          We first extract representations from a chosen layer of the flow-matching action expert,
-          across a number of tasks and episodes. We then learn a classifier that separates two
-          user-defined behavior classes (e.g. high vs. low speed), and use a distribution matching
-          algorithm to learn a correspondence between the two representation distributions.
-        </p>
-        <p>
-          At inference time, we check whether the current representation already lies in the desired
-          distribution. If not, we transport it using the map learned offline. Rather than applying
-          the full transport, we interpolate between the original layer output and the transported
-          representation, giving smooth, controllable steering strength.
-        </p>
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3" style="margin-top: -45px;">Introduction & Setup</h2>
+        <div class="content has-text-justified">
+
+          <p style="line-height: 1.5;" >
+            <b>Vision-Language-Action Models (VLAs)</b>: For readers familiar LLM/VLM architectures but unaware of VLAs, you can think of current SoTA VLAs architecturally as a mixture of MLLMs and flow-matching networks.
+            At any time instance, a VLA receives as input consisting of camera images, a text instruction for the underlying task and its current joint state information. This input is processed by the VLM part of the VLA, which conditions 
+            a flow-matching based action expert that predicts the low-level actions for each robot joint.
+          </p>
+
+          <p style="line-height: 1.5;" >
+            <b>Our goal</b> proposes a method that can offer a user, post-hoc behavioral control over robotic actions predicted by vision-language action models (VLAs).
+            Our method, titled <b>DiMaS (Distribution Matching for Steering VLAs)</b> is a representation steering method. Readers acquainted with interpretability literature might already be familiar with the term, but the essential idea is to
+            modify the internal representations of a generative model during inference time in order to achieve desired control over its output. 
+
+          </p>
+
+          <p style="line-height: 1.5;" >
+            <b>Our contributions</b>: We make key advancements along three axes
+            <ul>
+              <li> <i>Steering with task success</i>: The holy grail for VLA steering we believe is about how effectively a steering method can control robot style without losing on the task success rate. Even though our method is far from perfect, it takes some crucial steps forward towards achieving this goal.</li>
+              <div class="gap-5"></div>
+              <li> <i>Generalizability evaluation</i>: Evaluation in VLA papers often suffer from poor generalization evaluation. In contrast, we perform a structured evaluation for how well our steering method generalizes under various splits of training/testing tasks.</li>
+              <div class="gap-5"></div>
+              <li> <i>VLA Representation strucutre insights</i>: Steering in LLMs/VLMs is popularly performed by shifting in a single direction in the latent space. While the evidence against representation of a feature as a linear direction is mounting, prior VLA steering methods still followed this paradigm. We qualitatively show that it isn't really the case for common VLA architectures (despite high linear separability!) and consequently propose an optimal-transport based method.</li>
+            </ul>
+          </p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
 <section class="section">
+  <div class="columns is-centered">
+    <div class="column is-full-width">
+      <h2 class="title is-3 has-text-centered" style="margin-top: -45px;">Method overview</h2>
+      <center>
+        <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline" style="max-width:850px;">
+        <h2 class="subtitle has-text-centered" style="max-width:850px;">
+          <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
+        </h2>
+      </center>
+
+      <div class="gap-20"></div>
+
+      <div class="columns is-centered has-text-centered">
+      <div class="content has-text-justified">
+
+      <div style="line-height: 1.5; max-width:800px;">
+        <p>
+          Our method details can be summarized as the following steps:
+          <ul>
+              <li> <b>Representation and feature sourcing</b>: We first extract representations from a chosen layer of the flow-matching action expert (not the VLM!),
+          across a number of tasks and episodes. Each representation is paired with a target scalar feature that denotes the behavioral property we wish to control.</li>
+              <div class="gap-5"></div>
+              <li> <b>Source/target distribution construction</b>: The complete set of extracted representations are partitioned into a source and target distribution based on the feature value. In the DiMaS illustration, this corresponds to the red/green distributions.</li>
+              <div class="gap-5"></div>
+              <li> <b>Learning the steering as transport map</b>: The underlying foundation of our steering intervention relies on a distribution matching algorithm to learn a correspondence between the two representation source/target distributions. 
+          The main reason we opted for such a design was to ensure our steering operation could indeed move from one distribution to the other. Even though we observed a high linear separability in the action expert representations (specially in the deeper layers, later flow-matching steps), single fixed direction in the latent space was not a "good" representation of the underlying feature. 
+          Intuitively, even though the red/green points in the DiMaS illustration above are linearly separable, moving the red points by a constant shift in any direction cannot match them completely to the green points (because the underlying geometries are different). Further details about this qualitative study can be found in the paper. 
+        </li>
+              <li> <b>Test-time intervention strategy</b>: At inference time, we check whether the current representation already lies in the desired
+          distribution (via a learned classifier between source/target distributions). If not, we transport it using the map learned offline. Rather than applying
+          the full transport, we interpolate between the original layer output and the transported
+          representation, giving smooth, controllable steering strength. This interpolation is essential to ensure we are able to control the feature of interest without significantly dropping the task success rate.</li>
+            </ul>
+        </p>
+      </div>
+      </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!--
+<section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered">
       <div class="column is-full-width">
-        <h2 class="title is-3">Key conclusions</h2>
+        <h2 class="title is-3">Key takeaways</h2>
         <div class="content has-text-justified">
           <ul>
             <li>Hidden representations in the action expert layers are linearly separable but not linearly steerable.</li>
@@ -161,6 +261,7 @@
     </div>
   </div>
 </section>
+-->
 
 
 <section class="section">
@@ -214,7 +315,7 @@
   title  = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
   author = {Khayatan, Pegah and Meziane, Sara and Parekh, Jayneel and Cord, Matthieu},
   year   = {2026},
-  note   = {TODO: venue / arXiv id once available},
+  note   = {ECCVW 2026 / https://arxiv.org/abs/2607.14280},
 }</code></pre>
   </div>
 </section>
