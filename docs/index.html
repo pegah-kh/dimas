@@ -25,10 +25,10 @@
 
   <style>
       body {
-        font-size:21px;
+        font-size:20px;
         margin:10px auto;
         width:auto;
-        max-width:1050px;
+        max-width:860px;
         line-height: 1.5;
       }
 
@@ -153,7 +153,7 @@
 <section class="section">
   <div class="container is-max-desktop">
     <div class="columns is-centered has-text-centered">
-      <div class="column is-four-fifths">
+      <div class="column is-full-width">
         <h2 class="title is-3" style="margin-top: -45px;">Abstract</h2>
         <div class="content has-text-justified">
           <p style="line-height: 1.5;" >
@@ -165,10 +165,47 @@
   </div>
 </section>
 
-<section class="hero teaser">
+
+<section class="section">
   <div class="container is-max-desktop">
-    <div class="hero-body">
-      <h2 class="title is-3 has-text-centered">Method overview</h2>
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3" style="margin-top: -45px;">Introduction & Setup</h2>
+        <div class="content has-text-justified">
+
+          <p style="line-height: 1.5;" >
+            <b>Vision-Language-Action Models (VLAs)</b>: For readers familiar LLM/VLM architectures but unaware of VLAs, you can think of current SoTA VLAs architecturally as a mixture of MLLMs and flow-matching networks.
+            At any time instance, a VLA receives as input consisting of camera images, a text instruction for the underlying task and its current joint state information. This input is processed by the VLM part of the VLA, which conditions 
+            a flow-matching based action expert that predicts the low-level actions for each robot joint.
+          </p>
+
+          <p style="line-height: 1.5;" >
+            <b>Our goal</b> proposes a method that can offer a user, post-hoc behavioral control over robotic actions predicted by vision-language action models (VLAs).
+            Our method, titled DiMaS (Distribution Matching for Steering VLAs) is a representation steering method. Readers acquainted with interpretability literature might already be familiar with the term, but the essential idea is to
+            modify the internal representations of a generative model during inference time in order to achieve desired control over its output. 
+
+          </p>
+
+          <p style="line-height: 1.5;" >
+            <b>Our contributions</b>: We make key advancements along three axes
+            <ul>
+              <li> <i>Steering with task success</i>: For any current/future steering method for VLAs, we believe they will be primarily judged upon how effectively they can control robot style without losing on the task success rate. Even though our method is far from perfect, it takes some crucial steps forward towards achieving this goal.</li>
+              <div class="gap-5"></div>
+              <li> <i>Generalizability evaluation</i>: Evaluation in VLA papers often suffer from poor generalization evaluation. In contrast, we perform a structured evaluation for how well our steering method generalizes under various splits of training/testing tasks.</li>
+              <div class="gap-5"></div>
+              <li> <i>VLA Representation strucutre insights</i>: Steering in LLMs/VLMs is popularly performed by shifting in a single direction in the latent space. While the evidence against representation of a feature as a linear direction is mounting, prior VLA steering methods still followed this paradigm. We qualitatively show that it isn't really the case for common VLA architectures (despite high linear separability!) and consequently propose an optimal-transport based method</li>
+            </ul>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="columns is-centered">
+    <div class="column is-full-width">
+      <h2 class="title is-3 has-text-centered" style="margin-top: -45px;">Method overview</h2>
       <center>
         <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline" style="max-width:850px;">
         <h2 class="subtitle has-text-centered" style="max-width:850px;">
@@ -176,7 +213,9 @@
         </h2>
       </center>
 
-      <div class="content has-text-justified method-description">
+      <div class="content has-text-justified">
+
+      <div style="line-height: 1.5;">
         <p>
           We first extract representations from a chosen layer of the flow-matching action expert,
           across a number of tasks and episodes. We then learn a classifier that separates two
@@ -189,6 +228,7 @@
           the full transport, we interpolate between the original layer output and the transported
           representation, giving smooth, controllable steering strength.
         </p>
+      </div>
       </div>
     </div>
   </div>
