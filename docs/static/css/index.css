@@ -38,7 +38,7 @@ body {
 
 /* Method overview */
 .method-figure {
-  max-width: 850px;
+  max-width: 1000px;
   margin: 1.5rem auto 0;
 }
 
@@ -56,8 +56,7 @@ body {
 }
 
 .method-steps-list {
-  max-width: 800px;
-  margin: 2rem auto 0;
+  margin: 2rem 0 0;
   line-height: 1.5;
 }
 
@@ -116,7 +115,7 @@ body {
 /* Steering demonstrations: add more entries by duplicating .sample-card */
 .samples-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
   margin-top: 2rem;
 }
@@ -164,7 +163,7 @@ body {
   font-size: 2rem;
 }
 
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 768px) {
   .samples-grid {
     grid-template-columns: 1fr;
   }

@@ -28,7 +28,7 @@
         font-size:20px;
         margin:10px auto;
         width:auto;
-        max-width:860px;
+        max-width:1200px;
         line-height: 1.5;
       }
 
@@ -95,7 +95,7 @@
 
 <section class="hero">
   <div class="hero-body">
-    <div class="container is-max-desktop">
+    <div class="container is-max-widescreen">
       <div class="columns is-centered">
         <div class="column has-text-centered">
           <h1 class="title is-1 publication-title">DiMaS: Distribution Matching for Steering
@@ -151,7 +151,7 @@
 </section>
 
 <section class="section">
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     <div class="columns is-centered has-text-centered">
       <div class="column is-full-width">
         <h2 class="title is-3" style="margin-top: -45px;">Abstract</h2>
@@ -173,7 +173,7 @@
 
 
 <section class="section">
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     <div class="columns is-centered has-text-centered">
       <div class="column is-full-width">
         <h2 class="title is-3" style="margin-top: -45px;">Introduction & Setup</h2>
@@ -204,22 +204,22 @@
           </p>
         </div>
 
-        <div class="columns conclusions has-text-left">
-          <div class="column">
+        <div class="columns is-multiline conclusions has-text-left">
+          <div class="column is-half">
             <div class="conclusion-card">
               <span class="step-number">1</span>
               <p class="card-title"><i>Steering with task success</i>:</p>
               <p>The holy grail for VLA steering we believe is about how effectively a steering method can control robot style without losing on the task success rate. Even though our method is far from perfect, it takes some crucial steps forward towards achieving this goal.</p>
             </div>
           </div>
-          <div class="column">
+          <div class="column is-half">
             <div class="conclusion-card">
               <span class="step-number">2</span>
               <p class="card-title"><i>Generalizability evaluation</i>:</p>
               <p>Evaluation in VLA papers often suffer from poor generalization evaluation. In contrast, we perform a structured evaluation for how well our steering method generalizes under various splits of training/testing tasks.</p>
             </div>
           </div>
-          <div class="column">
+          <div class="column is-full">
             <div class="conclusion-card">
               <span class="step-number">3</span>
               <p class="card-title"><i>VLA Representation strucutre insights</i>:</p>
@@ -233,49 +233,51 @@
 </section>
 
 <section class="section">
-  <div class="columns is-centered">
-    <div class="column is-full-width">
-      <h2 class="title is-3 has-text-centered" style="margin-top: -45px;">Method overview</h2>
-      <figure class="method-figure">
-        <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline">
-        <figcaption class="has-text-centered">
-          <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
-        </figcaption>
-      </figure>
+  <div class="container is-max-widescreen">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3 has-text-centered" style="margin-top: -45px;">Method overview</h2>
+        <figure class="method-figure">
+          <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline">
+          <figcaption class="has-text-centered">
+            <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
+          </figcaption>
+        </figure>
 
-      <div class="method-steps-list">
-        <p style="line-height: 1.5;" class="cards-intro">
-          Our method details can be summarized as the following steps:
-        </p>
+        <div class="method-steps-list">
+          <p style="line-height: 1.5;" class="cards-intro">
+            Our method details can be summarized as the following steps:
+          </p>
 
-        <div class="step-card">
-          <span class="step-number">1</span>
-          <p class="card-title"><b>Representation and feature sourcing</b>:</p>
-          <p>We first extract representations from a chosen layer of the flow-matching action expert (not the VLM!),
-          across a number of tasks and episodes. Each representation is paired with a target scalar feature that denotes the behavioral property we wish to control.</p>
-        </div>
+          <div class="step-card">
+            <span class="step-number">1</span>
+            <p class="card-title"><b>Representation and feature sourcing</b>:</p>
+            <p>We first extract representations from a chosen layer of the flow-matching action expert (not the VLM!),
+            across a number of tasks and episodes. Each representation is paired with a target scalar feature that denotes the behavioral property we wish to control.</p>
+          </div>
 
-        <div class="step-card">
-          <span class="step-number">2</span>
-          <p class="card-title"><b>Source/target distribution construction</b>:</p>
-          <p>The complete set of extracted representations are partitioned into a source and target distribution based on the feature value. In the DiMaS illustration, this corresponds to the red/green distributions.</p>
-        </div>
+          <div class="step-card">
+            <span class="step-number">2</span>
+            <p class="card-title"><b>Source/target distribution construction</b>:</p>
+            <p>The complete set of extracted representations are partitioned into a source and target distribution based on the feature value. In the DiMaS illustration, this corresponds to the red/green distributions.</p>
+          </div>
 
-        <div class="step-card">
-          <span class="step-number">3</span>
-          <p class="card-title"><b>Learning the steering as transport map</b>:</p>
-          <p>The underlying foundation of our steering intervention relies on a distribution matching algorithm to learn a correspondence between the two representation source/target distributions.</p>
-          <p>The main reason we opted for such a design was to ensure our steering operation could indeed move from one distribution to the other. Even though we observed a high linear separability in the action expert representations (specially in the deeper layers, later flow-matching steps), single fixed direction in the latent space was not a "good" representation of the underlying feature.</p>
-          <p>Intuitively, even though the red/green points in the DiMaS illustration above are linearly separable, moving the red points by a constant shift in any direction cannot match them completely to the green points (because the underlying geometries are different). Further details about this qualitative study can be found in the paper.</p>
-        </div>
+          <div class="step-card">
+            <span class="step-number">3</span>
+            <p class="card-title"><b>Learning the steering as transport map</b>:</p>
+            <p>The underlying foundation of our steering intervention relies on a distribution matching algorithm to learn a correspondence between the two representation source/target distributions.</p>
+            <p>The main reason we opted for such a design was to ensure our steering operation could indeed move from one distribution to the other. Even though we observed a high linear separability in the action expert representations (specially in the deeper layers, later flow-matching steps), single fixed direction in the latent space was not a "good" representation of the underlying feature.</p>
+            <p>Intuitively, even though the red/green points in the DiMaS illustration above are linearly separable, moving the red points by a constant shift in any direction cannot match them completely to the green points (because the underlying geometries are different). Further details about this qualitative study can be found in the paper.</p>
+          </div>
 
-        <div class="step-card">
-          <span class="step-number">4</span>
-          <p class="card-title"><b>Test-time intervention strategy</b>:</p>
-          <p>At inference time, we check whether the current representation already lies in the desired
-          distribution (via a learned classifier between source/target distributions). If not, we transport it using the map learned offline. Rather than applying
-          the full transport, we interpolate between the original layer output and the transported
-          representation, giving smooth, controllable steering strength. This interpolation is essential to ensure we are able to control the feature of interest without significantly dropping the task success rate.</p>
+          <div class="step-card">
+            <span class="step-number">4</span>
+            <p class="card-title"><b>Test-time intervention strategy</b>:</p>
+            <p>At inference time, we check whether the current representation already lies in the desired
+            distribution (via a learned classifier between source/target distributions). If not, we transport it using the map learned offline. Rather than applying
+            the full transport, we interpolate between the original layer output and the transported
+            representation, giving smooth, controllable steering strength. This interpolation is essential to ensure we are able to control the feature of interest without significantly dropping the task success rate.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -284,7 +286,7 @@
 
 <!--
 <section class="section">
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     <div class="columns is-centered">
       <div class="column is-full-width">
         <h2 class="title is-3">Key takeaways</h2>
@@ -303,7 +305,7 @@
 
 
 <section class="section">
-  <div class="container is-max-desktop">
+  <div class="container is-max-widescreen">
     <h2 class="title is-3 has-text-centered">Steering Demonstrations</h2>
     <p class="has-text-centered subtitle is-6">Baseline vs. DiMaS-steered rollouts on the same task and seed.</p>
 
@@ -347,68 +349,64 @@
         <p class="sample-caption has-text-centered">The end-effector moves higher (larger |&Delta;z| per step) after steering.</p>
       </div>
 
-      <!-- PLACEHOLDER: new demonstration #3 -->
-      <div class="sample-card is-placeholder">
-        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+      <div class="sample-card">
+        <h3 class="title is-4 has-text-centered">Speed steering, low &rarr; high</h3>
         <div class="sample-pair">
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Baseline (unsteered)</strong></p>
+            <img src="./static/demos/libero_10_7_16_all_alpha0.5_speed_normal.gif" alt="Speed baseline rollout">
           </div>
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Steered (low &rarr; high)</strong></p>
+            <img src="./static/demos/libero_10_7_16_all_alpha0.5_speed_low_to_high.gif" alt="Speed steered rollout">
           </div>
         </div>
-        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+        <p class="sample-caption has-text-centered">The end-effector moves noticeably faster after steering.</p>
       </div>
 
-      <!-- PLACEHOLDER: new demonstration #4 -->
-      <div class="sample-card is-placeholder">
-        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+      <div class="sample-card">
+        <h3 class="title is-4 has-text-centered">Height steering, high &rarr; low</h3>
         <div class="sample-pair">
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Baseline (unsteered)</strong></p>
+            <img src="./static/demos/libero_object_8_17_all_alpha0.5_height_normal.gif" alt="Height baseline rollout">
           </div>
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Steered (high &rarr; low)</strong></p>
+            <img src="./static/demos/libero_object_8_17_all_alpha0.5_height_high_to_low.gif" alt="Height steered rollout">
           </div>
         </div>
-        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+        <p class="sample-caption has-text-centered">The end-effector moves lower (smaller |&Delta;z| per step) after steering.</p>
       </div>
 
-      <!-- PLACEHOLDER: new demonstration #5 -->
-      <div class="sample-card is-placeholder">
-        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+      <div class="sample-card">
+        <h3 class="title is-4 has-text-centered">Speed steering, high &rarr; low</h3>
         <div class="sample-pair">
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Baseline (unsteered)</strong></p>
+            <img src="./static/demos/libero_object_9_17_all_alpha0.5_speed_normal.gif" alt="Speed baseline rollout">
           </div>
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Steered (high &rarr; low)</strong></p>
+            <img src="./static/demos/libero_object_9_17_all_alpha0.5_speed_high_to_low.gif" alt="Speed steered rollout">
           </div>
         </div>
-        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+        <p class="sample-caption has-text-centered">The end-effector moves noticeably slower after steering.</p>
       </div>
 
-      <!-- PLACEHOLDER: new demonstration #6 -->
-      <div class="sample-card is-placeholder">
-        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+      <div class="sample-card">
+        <h3 class="title is-4 has-text-centered">Height steering, low &rarr; high</h3>
         <div class="sample-pair">
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Baseline (unsteered)</strong></p>
+            <img src="./static/demos/libero_object_6_16_all_alpha0.5_height_normal.gif" alt="Height baseline rollout">
           </div>
           <div class="sample-pair-item has-text-centered">
-            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
-            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+            <p class="is-size-6"><strong>Steered (low &rarr; high)</strong></p>
+            <img src="./static/demos/libero_object_6_16_all_alpha0.5_height_low_to_high.gif" alt="Height steered rollout">
           </div>
         </div>
-        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+        <p class="sample-caption has-text-centered">The end-effector moves higher (larger |&Delta;z| per step) after steering.</p>
       </div>
 
     </div>
@@ -417,7 +415,7 @@
 
 
 <section class="section" id="BibTeX">
-  <div class="container is-max-desktop content">
+  <div class="container is-max-widescreen content">
     <h2 class="title">BibTeX</h2>
     <!-- TODO: keep in sync with the citation in the main repo README -->
     <pre><code>@inproceedings{khayatan2026dimas,
