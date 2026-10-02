@@ -11,6 +11,108 @@ body {
   margin: 1.5rem auto 0;
 }
 
+.abstract p + p {
+  margin-top: 1rem;
+}
+
+/* Highlighted paragraph blocks (Introduction & Setup) */
+.callout {
+  background: #f7f8fa;
+  border-left: 4px solid hsl(204, 86%, 53%);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.callout p {
+  margin-bottom: 0.5rem;
+}
+
+.callout p:last-child {
+  margin-bottom: 0;
+}
+
+.cards-intro {
+  margin-top: 1.5rem;
+}
+
+/* Method overview */
+.method-figure {
+  max-width: 850px;
+  margin: 1.5rem auto 0;
+}
+
+.method-figure img {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+}
+
+.method-figure figcaption {
+  font-family: 'Google Sans', sans-serif;
+  font-size: 1.1rem;
+  color: #4a4a4a;
+  margin-top: 1rem;
+}
+
+.method-steps-list {
+  max-width: 800px;
+  margin: 2rem auto 0;
+  line-height: 1.5;
+}
+
+.method-steps-list .step-card {
+  margin-top: 2rem;
+}
+
+/* Numbered cards for method steps and contributions */
+.step-card,
+.conclusion-card {
+  position: relative;
+  height: 100%;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  padding: 2.25rem 1.5rem 1.5rem;
+}
+
+.step-card p,
+.conclusion-card p {
+  line-height: 1.5;
+  text-align: justify;
+}
+
+.conclusion-card p {
+  text-align: left;
+}
+
+.step-card p:last-child,
+.conclusion-card p:last-child {
+  margin-bottom: 0;
+}
+
+.card-title {
+  margin-bottom: 0.5rem;
+}
+
+.step-number {
+  position: absolute;
+  top: -1rem;
+  left: 1.5rem;
+  width: 2rem;
+  height: 2rem;
+  line-height: 2rem;
+  border-radius: 50%;
+  background: hsl(204, 86%, 53%);
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+}
+
+.conclusions {
+  margin-top: 1.5rem;
+}
+
 /* Steering demonstrations: add more entries by duplicating .sample-card */
 .samples-grid {
   display: grid;
@@ -37,9 +139,35 @@ body {
   min-width: 140px;
 }
 
-.sample-pair-item img {
+.sample-pair-item img,
+.sample-pair-item video {
+  display: block;
   width: 100%;
   border-radius: 8px;
+}
+
+/* Empty slot reserved for a future video/GIF */
+.sample-card.is-placeholder {
+  border-style: dashed;
+  border-color: #d0d0d0;
+  background: transparent;
+}
+
+.media-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border: 2px dashed #d0d0d0;
+  border-radius: 8px;
+  color: #c0c0c0;
+  font-size: 2rem;
+}
+
+@media screen and (max-width: 480px) {
+  .samples-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .sample-caption {

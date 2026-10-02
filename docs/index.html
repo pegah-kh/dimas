@@ -155,9 +155,15 @@
     <div class="columns is-centered has-text-centered">
       <div class="column is-full-width">
         <h2 class="title is-3" style="margin-top: -45px;">Abstract</h2>
-        <div class="content has-text-justified">
+        <div class="content has-text-justified abstract">
           <p style="line-height: 1.5;" >
-            Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: fine-grained behavioral control, the ability to govern how a robot performs a task by intervening on its internal representations. Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in flow-matching based VLAs. We propose DiMaS, a Distribution Matching Steering strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs.
+            Flow-matching-based vision-language-action (VLA) models have emerged as powerful policies for robotic manipulation, yet a critical capability remains underexplored: <strong>fine-grained behavioral control</strong>, the ability to govern how a robot performs a task by intervening on its internal representations.
+          </p>
+          <p style="line-height: 1.5;" >
+            Representation steering is a well-established interpretability tool for language and vision-language models, where behavioral features are typically encoded as linear directions, but we show that these classic methods fall short in flow-matching based VLAs.
+          </p>
+          <p style="line-height: 1.5;" >
+            We propose <strong>DiMaS</strong>, a <strong>Distribution Matching Steering</strong> strategy tailored to flow-matching VLAs, which transports between representation distributions rather than shifting along a fixed direction, and show that it effectively controls behavior across two state-of-the-art VLAs.
           </p>
         </div>
       </div>
@@ -173,29 +179,53 @@
         <h2 class="title is-3" style="margin-top: -45px;">Introduction & Setup</h2>
         <div class="content has-text-justified">
 
-          <p style="line-height: 1.5;" >
-            <b>Vision-Language-Action Models (VLAs)</b>: For readers familiar LLM/VLM architectures but unaware of VLAs, you can think of current SoTA VLAs architecturally as a mixture of MLLMs and flow-matching networks.
-            At any time instance, a VLA receives as input consisting of camera images, a text instruction for the underlying task and its current joint state information. This input is processed by the VLM part of the VLA, which conditions 
-            a flow-matching based action expert that predicts the low-level actions for each robot joint.
-          </p>
+          <div class="callout">
+            <p style="line-height: 1.5;" >
+              <b>Vision-Language-Action Models (VLAs)</b>: For readers familiar LLM/VLM architectures but unaware of VLAs, you can think of current SoTA VLAs architecturally as a mixture of MLLMs and flow-matching networks.
+            </p>
+            <p style="line-height: 1.5;" >
+              At any time instance, a VLA receives as input consisting of camera images, a text instruction for the underlying task and its current joint state information. This input is processed by the VLM part of the VLA, which conditions
+              a flow-matching based action expert that predicts the low-level actions for each robot joint.
+            </p>
+          </div>
 
-          <p style="line-height: 1.5;" >
-            <b>Our goal</b> proposes a method that can offer a user, post-hoc behavioral control over robotic actions predicted by vision-language action models (VLAs).
-            Our method, titled <b>DiMaS (Distribution Matching for Steering VLAs)</b> is a representation steering method. Readers acquainted with interpretability literature might already be familiar with the term, but the essential idea is to
-            modify the internal representations of a generative model during inference time in order to achieve desired control over its output. 
+          <div class="callout">
+            <p style="line-height: 1.5;" >
+              <b>Our goal</b> proposes a method that can offer a user, post-hoc behavioral control over robotic actions predicted by vision-language action models (VLAs).
+            </p>
+            <p style="line-height: 1.5;" >
+              Our method, titled <b>DiMaS (Distribution Matching for Steering VLAs)</b> is a representation steering method. Readers acquainted with interpretability literature might already be familiar with the term, but the essential idea is to
+              modify the internal representations of a generative model during inference time in order to achieve desired control over its output.
+            </p>
+          </div>
 
-          </p>
-
-          <p style="line-height: 1.5;" >
+          <p style="line-height: 1.5;" class="cards-intro">
             <b>Our contributions</b>: We make key advancements along three axes
-            <ul>
-              <li> <i>Steering with task success</i>: The holy grail for VLA steering we believe is about how effectively a steering method can control robot style without losing on the task success rate. Even though our method is far from perfect, it takes some crucial steps forward towards achieving this goal.</li>
-              <div class="gap-5"></div>
-              <li> <i>Generalizability evaluation</i>: Evaluation in VLA papers often suffer from poor generalization evaluation. In contrast, we perform a structured evaluation for how well our steering method generalizes under various splits of training/testing tasks.</li>
-              <div class="gap-5"></div>
-              <li> <i>VLA Representation strucutre insights</i>: Steering in LLMs/VLMs is popularly performed by shifting in a single direction in the latent space. While the evidence against representation of a feature as a linear direction is mounting, prior VLA steering methods still followed this paradigm. We qualitatively show that it isn't really the case for common VLA architectures (despite high linear separability!) and consequently propose an optimal-transport based method.</li>
-            </ul>
           </p>
+        </div>
+
+        <div class="columns conclusions has-text-left">
+          <div class="column">
+            <div class="conclusion-card">
+              <span class="step-number">1</span>
+              <p class="card-title"><i>Steering with task success</i>:</p>
+              <p>The holy grail for VLA steering we believe is about how effectively a steering method can control robot style without losing on the task success rate. Even though our method is far from perfect, it takes some crucial steps forward towards achieving this goal.</p>
+            </div>
+          </div>
+          <div class="column">
+            <div class="conclusion-card">
+              <span class="step-number">2</span>
+              <p class="card-title"><i>Generalizability evaluation</i>:</p>
+              <p>Evaluation in VLA papers often suffer from poor generalization evaluation. In contrast, we perform a structured evaluation for how well our steering method generalizes under various splits of training/testing tasks.</p>
+            </div>
+          </div>
+          <div class="column">
+            <div class="conclusion-card">
+              <span class="step-number">3</span>
+              <p class="card-title"><i>VLA Representation strucutre insights</i>:</p>
+              <p>Steering in LLMs/VLMs is popularly performed by shifting in a single direction in the latent space. While the evidence against representation of a feature as a linear direction is mounting, prior VLA steering methods still followed this paradigm. We qualitatively show that it isn't really the case for common VLA architectures (despite high linear separability!) and consequently propose an optimal-transport based method.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -206,39 +236,47 @@
   <div class="columns is-centered">
     <div class="column is-full-width">
       <h2 class="title is-3 has-text-centered" style="margin-top: -45px;">Method overview</h2>
-      <center>
-        <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline" style="max-width:850px;">
-        <h2 class="subtitle has-text-centered" style="max-width:850px;">
+      <figure class="method-figure">
+        <img src="./static/images/dimas_train_inference.jpg" alt="DiMaS training and inference pipeline">
+        <figcaption class="has-text-centered">
           <span class="dnerf">DiMaS</span> matches action expert activations between two distributions (e.g. slow vs. fast, low vs. high), then steers a VLA policy toward one of the clusters at inference time
-        </h2>
-      </center>
+        </figcaption>
+      </figure>
 
-      <div class="gap-20"></div>
-
-      <div class="columns is-centered has-text-centered">
-      <div class="content has-text-justified">
-
-      <div style="line-height: 1.5; max-width:800px;">
-        <p>
+      <div class="method-steps-list">
+        <p style="line-height: 1.5;" class="cards-intro">
           Our method details can be summarized as the following steps:
-          <ul>
-              <li> <b>Representation and feature sourcing</b>: We first extract representations from a chosen layer of the flow-matching action expert (not the VLM!),
-          across a number of tasks and episodes. Each representation is paired with a target scalar feature that denotes the behavioral property we wish to control.</li>
-              <div class="gap-5"></div>
-              <li> <b>Source/target distribution construction</b>: The complete set of extracted representations are partitioned into a source and target distribution based on the feature value. In the DiMaS illustration, this corresponds to the red/green distributions.</li>
-              <div class="gap-5"></div>
-              <li> <b>Learning the steering as transport map</b>: The underlying foundation of our steering intervention relies on a distribution matching algorithm to learn a correspondence between the two representation source/target distributions. 
-          The main reason we opted for such a design was to ensure our steering operation could indeed move from one distribution to the other. Even though we observed a high linear separability in the action expert representations (specially in the deeper layers, later flow-matching steps), single fixed direction in the latent space was not a "good" representation of the underlying feature. 
-          Intuitively, even though the red/green points in the DiMaS illustration above are linearly separable, moving the red points by a constant shift in any direction cannot match them completely to the green points (because the underlying geometries are different). Further details about this qualitative study can be found in the paper. 
-        </li>
-              <li> <b>Test-time intervention strategy</b>: At inference time, we check whether the current representation already lies in the desired
+        </p>
+
+        <div class="step-card">
+          <span class="step-number">1</span>
+          <p class="card-title"><b>Representation and feature sourcing</b>:</p>
+          <p>We first extract representations from a chosen layer of the flow-matching action expert (not the VLM!),
+          across a number of tasks and episodes. Each representation is paired with a target scalar feature that denotes the behavioral property we wish to control.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">2</span>
+          <p class="card-title"><b>Source/target distribution construction</b>:</p>
+          <p>The complete set of extracted representations are partitioned into a source and target distribution based on the feature value. In the DiMaS illustration, this corresponds to the red/green distributions.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">3</span>
+          <p class="card-title"><b>Learning the steering as transport map</b>:</p>
+          <p>The underlying foundation of our steering intervention relies on a distribution matching algorithm to learn a correspondence between the two representation source/target distributions.</p>
+          <p>The main reason we opted for such a design was to ensure our steering operation could indeed move from one distribution to the other. Even though we observed a high linear separability in the action expert representations (specially in the deeper layers, later flow-matching steps), single fixed direction in the latent space was not a "good" representation of the underlying feature.</p>
+          <p>Intuitively, even though the red/green points in the DiMaS illustration above are linearly separable, moving the red points by a constant shift in any direction cannot match them completely to the green points (because the underlying geometries are different). Further details about this qualitative study can be found in the paper.</p>
+        </div>
+
+        <div class="step-card">
+          <span class="step-number">4</span>
+          <p class="card-title"><b>Test-time intervention strategy</b>:</p>
+          <p>At inference time, we check whether the current representation already lies in the desired
           distribution (via a learned classifier between source/target distributions). If not, we transport it using the map learned offline. Rather than applying
           the full transport, we interpolate between the original layer output and the transported
-          representation, giving smooth, controllable steering strength. This interpolation is essential to ensure we are able to control the feature of interest without significantly dropping the task success rate.</li>
-            </ul>
-        </p>
-      </div>
-      </div>
+          representation, giving smooth, controllable steering strength. This interpolation is essential to ensure we are able to control the feature of interest without significantly dropping the task success rate.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -269,7 +307,14 @@
     <h2 class="title is-3 has-text-centered">Steering Demonstrations</h2>
     <p class="has-text-centered subtitle is-6">Baseline vs. DiMaS-steered rollouts on the same task and seed.</p>
 
-    <!-- Each demonstration is a self-contained .sample-card; duplicate this block to add more samples. -->
+    <!--
+      Each demonstration is a self-contained .sample-card; duplicate a block to add more samples.
+      To fill a placeholder slot, replace the <div class="media-placeholder"> with either
+        <img src="./static/demos/NAME.gif" alt="...">
+      or
+        <video src="./static/demos/NAME.mp4" autoplay muted loop playsinline></video>
+      and add the title / labels / caption, then drop the "is-placeholder" class from the card.
+    -->
     <div class="samples-grid">
 
       <div class="sample-card">
@@ -302,6 +347,70 @@
         <p class="sample-caption has-text-centered">The end-effector moves higher (larger |&Delta;z| per step) after steering.</p>
       </div>
 
+      <!-- PLACEHOLDER: new demonstration #3 -->
+      <div class="sample-card is-placeholder">
+        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+        <div class="sample-pair">
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+        </div>
+        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+      </div>
+
+      <!-- PLACEHOLDER: new demonstration #4 -->
+      <div class="sample-card is-placeholder">
+        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+        <div class="sample-pair">
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+        </div>
+        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+      </div>
+
+      <!-- PLACEHOLDER: new demonstration #5 -->
+      <div class="sample-card is-placeholder">
+        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+        <div class="sample-pair">
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+        </div>
+        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+      </div>
+
+      <!-- PLACEHOLDER: new demonstration #6 -->
+      <div class="sample-card is-placeholder">
+        <h3 class="title is-4 has-text-centered"><!-- TODO: title --></h3>
+        <div class="sample-pair">
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+          <div class="sample-pair-item has-text-centered">
+            <p class="is-size-6"><strong><!-- TODO: label --></strong></p>
+            <div class="media-placeholder"><i class="fas fa-film"></i></div>
+          </div>
+        </div>
+        <p class="sample-caption has-text-centered"><!-- TODO: caption --></p>
+      </div>
+
     </div>
   </div>
 </section>
@@ -311,11 +420,12 @@
   <div class="container is-max-desktop content">
     <h2 class="title">BibTeX</h2>
     <!-- TODO: keep in sync with the citation in the main repo README -->
-    <pre><code>@misc{dimas2026,
-  title  = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
-  author = {Khayatan, Pegah and Meziane, Sara and Parekh, Jayneel and Cord, Matthieu},
-  year   = {2026},
-  note   = {ECCVW 2026 / https://arxiv.org/abs/2607.14280},
+    <pre><code>@inproceedings{khayatan2026dimas,
+  title     = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
+  author    = {Khayatan, Pegah and Meziane, Sara and Parekh, Jayneel and Cord, Matthieu},
+  booktitle = {ECCV 2026 Workshop on Explainable Computer Vision: Challenges and Opportunities in the Era of Foundation Models (Proceedings Track)},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=dksx9PtSZ1},
 }</code></pre>
   </div>
 </section>

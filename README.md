@@ -211,14 +211,11 @@ by default (Optimal Transport is the flagship method showcased here). -->
 If you use this code, please cite:
 
 ```bibtex
-@misc{dimas2026,
-  title         = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
-  author        = {Khayatan*, Pegah and Meziane*, Sara and Parekh*, Jayneel and Cord, Matthieu},
-  year          = {2026},
-  eprint        = {2607.14280},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CV},
-  url           = {https://arxiv.org/abs/2607.14280},
-  note          = {*Equal contribution.},
+@inproceedings{khayatan2026dimas,
+  title     = {{DiMaS}: Distribution Matching for Steering Vision-Language-Action Models},
+  author    = {Khayatan, Pegah and Meziane, Sara and Parekh, Jayneel and Cord, Matthieu},
+  booktitle = {ECCV 2026 Workshop on Explainable Computer Vision: Challenges and Opportunities in the Era of Foundation Models (Proceedings Track)},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=dksx9PtSZ1},
 }
 ```
