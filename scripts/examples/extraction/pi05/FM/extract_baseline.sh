@@ -28,7 +28,7 @@ EXTRACTION_DIR="${EXTRACTION_DIR:-./results/examples/pi05/${SUITE}_fm}"
 MODULE_LIST=$(printf '"model.paligemma_with_expert.gemma_expert.model.layers.%d.mlp_gated_residual",' "${LAYERS[@]}")
 MODULES="[[${MODULE_LIST%,}]]"
 
-HOOK='["save_input_hidden_states"]'
+HOOK='["save_input_hidden_states_given_token_range"]'
 
 echo "[Extract FM hidden states] ${SUITE} task_ids=${TASK_IDS}"
 python "$EVAL_SCRIPT" \
@@ -40,6 +40,8 @@ python "$EVAL_SCRIPT" \
     --eval.n_episodes="$N_EPISODES" \
     --output_dir="$EXTRACTION_DIR" \
     --modules_to_hook="$MODULES" \
-    --hook_names="$HOOK"
+    --hook_names="$HOOK" \
+    --token_idx='[10]'
+
 
 echo "=== Done: FM extraction for ${SUITE} -> ${EXTRACTION_DIR} ==="

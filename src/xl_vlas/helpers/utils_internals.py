@@ -837,6 +837,7 @@ def get_hidden_states(
     token_of_interest_start_token: int = 0,
     extract_before_special_tokens: bool = False,
     save_only_generated_tokens: bool = False,
+    extract_first_n_tokens: int = None,
     **kwargs: Any,
 ) -> Dict[str, Any]:
     hidden_states = {}
@@ -852,6 +853,8 @@ def get_hidden_states(
             v = v[:, token_idx, :].unsqueeze(1)
         elif token_start_end_idx is not None:
             v = v[:, int(token_start_end_idx[0]) : int(token_start_end_idx[1]), :]
+        elif extract_first_n_tokens is not None:
+            v = v[:, :extract_first_n_tokens, :]
         elif extract_token_of_interest:
             if save_only_generated_tokens:
                 start_idx_generated_tokens = -kwargs["model_generated_output"].shape[1]
@@ -967,6 +970,15 @@ def register_hooks(
             token_idx=args.token_idx[0]
             if len(args.token_idx) == 1
             else args.token_idx[hook_index],
+        )
+    elif "save_hidden_states_given_token_range" == hook_name:
+        # Save the hidden states at given token index
+        hook_function = save_hidden_states
+        hook_return_function = partial(
+            get_hidden_states, 
+            extract_first_n_tokens=args.token_idx[0] 
+            if len(args.token_idx)==1 
+            else args.token_idx[hook_index]
         )
     elif "save_hidden_states_given_token_start_end_idx" == hook_name:
         # Save the hidden states of tokens between start and end index
